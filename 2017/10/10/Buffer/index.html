@@ -89,7 +89,8 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-969c8294a176ff0c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-28d26c0fc676c831.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-10-10T03:01:04.346Z">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-3c2e02d035172fef.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2017-10-10T03:17:32.722Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Buffer">
 <meta name="twitter:description" content="缓冲区缓冲区基础缓冲区概念缓冲区是包在一个对象内的基本数据元素数组。Buffer 类相比一个简单数组的优点是它将关于数据的数据内容和信息包含在一个单一的对象中。Buffer 类以及它专有的子类定义了一个用于处理数据缓冲区的 API。如下图，还有一些其他的子类这就不列举了 通过上图可以看出，都是基本类型对应的Buffer。上图的几个Buffer都提供了读和写的方法get()和put()。 属性所有的">
@@ -380,30 +381,40 @@
 </ul>
 <p><img src="http://upload-images.jianshu.io/upload_images/4714843-28d26c0fc676c831.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
 <p>下面通过一个例子来看看</p>
-<pre><code>import java.io.RandomAccessFile;
+<pre><code>import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-
-class FileChannelDemo{
-    public static void main(String[] args) throws Exception {
-        RandomAccessFile rFile  = new RandomAccessFile(&quot;D:\\data.txt&quot;,&quot;rw&quot;);
-        FileChannel inChannel = rFile.getChannel();
-        ByteBuffer buf = ByteBuffer.allocate(48);
-        int bytesRead = inChannel.read(buf); 
-        while(bytesRead != -1){
-            System.out.println(&quot;Read &quot;+bytesRead);
-            buf.flip();//将写模式换成读模式
-            while(buf.hasRemaining()){
-                System.out.println((char)buf.get());//3
-            }
-            buf.clear();//4
-            bytesRead = inChannel.read(buf);
-        }
-        rFile.close();
+import java.nio.CharBuffer;
+import java.nio.ByteOrder;
+public class BufferCharView
+{
+    public static void main (String [] argv)
+            throws Exception
+    {
+        ByteBuffer byteBuffer =
+                ByteBuffer.allocate (7).order (ByteOrder.BIG_ENDIAN);
+        CharBuffer charBuffer = byteBuffer.asCharBuffer( );
+// Load the ByteBuffer with some bytes
+        byteBuffer.put (0, (byte)0);
+        byteBuffer.put (1, (byte)&apos;H&apos;);
+        byteBuffer.put (2, (byte)0);
+        byteBuffer.put (3, (byte)&apos;i&apos;);
+        byteBuffer.put (4, (byte)0);
+        byteBuffer.put (5, (byte)&apos;!&apos;);
+        byteBuffer.put (6, (byte)0);
+        println (byteBuffer);
+        println (charBuffer);
     }
-
+    // Print info about a buffer
+    private static void println (Buffer buffer)
+    {
+        System.out.println (&quot;pos=&quot; + buffer.position( )
+                + &quot;, limit=&quot; + buffer.limit( )
+                + &quot;, capacity=&quot; + buffer.capacity( )
+                + &quot;: &apos;&quot; + buffer.toString( ) + &quot;&apos;&quot;);
+    }
 }
-</code></pre><h3 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h3><p>Buffer的实现类自带了几个函数，也是我们经常用的<br><strong>flip()</strong><br>该方法是将Buffer从写模式切换到读模式。调用flip()方法会将position设回0，并将limit设置成之前position的值（position表示标记读的位置，limit表示之前写进多少个字节等—》现在能读多少个字节）</p>
+</code></pre><p>运行结果：<br><img src="http://upload-images.jianshu.io/upload_images/4714843-3c2e02d035172fef.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
+<h3 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h3><p>Buffer的实现类自带了几个函数，也是我们经常用的<br><strong>flip()</strong><br>该方法是将Buffer从写模式切换到读模式。调用flip()方法会将position设回0，并将limit设置成之前position的值（position表示标记读的位置，limit表示之前写进多少个字节等—》现在能读多少个字节）</p>
 <pre><code>public final Buffer flip() {
     limit = position;
     position = 0;
