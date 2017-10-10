@@ -362,131 +362,15 @@
       
         
           
-            <h1 id="缓冲区"><a href="#缓冲区" class="headerlink" title="缓冲区"></a>缓冲区</h1><h2 id="缓冲区基础"><a href="#缓冲区基础" class="headerlink" title="缓冲区基础"></a>缓冲区基础</h2><h3 id="缓冲区概念"><a href="#缓冲区概念" class="headerlink" title="缓冲区概念"></a>缓冲区概念</h3><p><strong>缓冲区是包在一个对象内的基本数据元素数组</strong>。Buffer 类相比一个简单数组的优点<br>是它将关于数据的数据内容和信息包含在一个单一的对象中。Buffer 类以及它专有的子类定义了<br>一个用于处理数据缓冲区的 API。如下图，还有一些其他的子类这就不列举了<br><img src="http://upload-images.jianshu.io/upload_images/4714843-969c8294a176ff0c.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
-<p>通过上图可以看出，都是基本类型对应的Buffer。上图的几个Buffer都提供了读和写的方法get()和put()。</p>
-<h3 id="属性"><a href="#属性" class="headerlink" title="属性"></a>属性</h3><p>所有的缓冲区都具有四个属性来提供关于其所包含的数据元素的信息。</p>
-<ul>
-<li><strong>容量（Capacity）</strong>：缓冲区能够容纳的数据元素的最大数量。这一容量在缓冲区创建时被设定，并且永远不能被改变。</li>
-<li><strong>上界（Limit）</strong>：缓冲区的第一个不能被读或写的元素。或者说，缓冲区中现存元素的计数。</li>
-<li><strong>位置（Position）</strong>：下一个要被读或写的元素的索引。位置会自动由相应的 get( )和 put( )函数更新。</li>
-<li><p><strong>标记（Mark）</strong>：一个备忘位置。调用 mark( )来设定 mark = postion。调用 reset( )设定 position = mark。标记在设定前是未定义的( undefined) 。</p>
-<h2 id="缓冲区的创建"><a href="#缓冲区的创建" class="headerlink" title="缓冲区的创建"></a>缓冲区的创建</h2><p>想要获得一个Buffer对象首先要进行分配。每一个Buffer类都有一个allocate()方法<br>这是一个可储存100字符的CharBuffer</p>
-<p>  CharBuffer buf = CharBuffer.allocate(100);<br>或者用以下wrap方法</p>
-<p>  char [] myArray = new char [100];<br>  CharBuffer charbuffer = CharBuffer.wrap (myArray);<br>通过创建缓冲区我们再来看看capacity，limit，position<br><strong>capacity</strong><br>作为一个内存块，Buffer有一个固定的大小值,一般创建Buffer时初始化写入–&gt;ByteBuffer.allocate(capacity)，你只能往capacity里写byte、long、char等类型。一旦Buffer满了，需要将其清空（通过读数据或者清除数据）才能继续往里面写数据<br><strong>pisition</strong><br>当你写数据到Buffer中，position表示当前的位置。初始位置的position值为0，当一个byte、long等数据写到Buffer后，position会向前移动到下一个可插入数据的Buffer单元。<br>position最大可为capacity-1(因为position的初始值为0)<br>当读取数据时，也是从某个特定位置读，当Buffer从写模式切换到读模式，position会被重置为0，当从Buffer的position处读取数据时，position向前移动到下一个可读位置。<br><strong>limit</strong><br>在写模式中，Buffer的limit表示你最多往Buffer中写多少数据。写模式下，limit=capacity<br>在读模式中，limit表示你最多能读多少数据。因此，当切换读模式，limit会被设置成写模式下的position值（你能读到之前写入的所有数据）<br>如下图，我插入了1,2,3,4四个数据进这个Buffer</p>
-</li>
-</ul>
-<p><img src="http://upload-images.jianshu.io/upload_images/4714843-28d26c0fc676c831.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
-<p>下面通过一个例子来看看</p>
-<pre><code>import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-
-class FileChannelDemo{
-    public static void main(String[] args) throws Exception {
-        RandomAccessFile rFile  = new RandomAccessFile(&quot;D:\\data.txt&quot;,&quot;rw&quot;);
-        FileChannel inChannel = rFile.getChannel();
-        ByteBuffer buf = ByteBuffer.allocate(48);
-        int bytesRead = inChannel.read(buf); 
-        while(bytesRead != -1){
-            System.out.println(&quot;Read &quot;+bytesRead);
-            buf.flip();//将写模式换成读模式
-            while(buf.hasRemaining()){
-                System.out.println((char)buf.get());//3
-            }
-            buf.clear();//4
-            bytesRead = inChannel.read(buf);
-        }
-        rFile.close();
-    }
-
-}
-</code></pre><h3 id="函数"><a href="#函数" class="headerlink" title="函数"></a>函数</h3><p>Buffer的实现类自带了几个函数，也是我们经常用的<br><strong>flip()</strong><br>该方法是将Buffer从写模式切换到读模式。调用flip()方法会将position设回0，并将limit设置成之前position的值（position表示标记读的位置，limit表示之前写进多少个字节等—》现在能读多少个字节）</p>
-<pre><code>public final Buffer flip() {
-    limit = position;
-    position = 0;
-    mark = -1;
-    return this;
-}
-</code></pre><p><strong>rewind()</strong><br>Buffer.rewind()将position设回0，所以你可以重读Buffer中的所有数据。limit保持不变，仍然表示能从Buffer中读取多少个元素（byte、char等）。</p>
-<pre><code>public final Buffer rewind() {
-    position = 0;
-    mark = -1;
-    return this;
-}
-</code></pre><p><strong>clear()和compact()</strong><br>一旦读完Buffer中的数据，需要让Buffer准备好再次被写入，可以通过clear()或者compact()来完成。</p>
-<p>　　如果调用的是clear()，position将被设为0，limit将被设为capacity的值，换句话说，Buffer被清空来，Buffer中的数据并未清除，只说这些标记告诉我们可以从哪里开始往Buffer中写数据了。如果里面还有数据，调用clear()，这些数据将被遗忘，意味着不再有任何标记会告诉你哪些数据被读过，哪些没有。</p>
-<pre><code>public final Buffer clear() {
-    position = 0;
-    limit = capacity;
-    mark = -1;
-    return this;
-}
-</code></pre><p>　　如果Buffer中未读的数据，并且以后还需要，那么使用compact()方法。</p>
-<p>　　compact方法将所有未读的数据copy到Buffer起始处，然后将position设到最后一个未读数据的后面。limit属性仍然和clear()方法一样，设置成capacity。现在Buffer准备好写数据了，但是不会覆盖未读的数据。<br><strong>mark()与reset()</strong><br>通过Buffer.mark()方法，可以标记Buffer中的一个特定的position，之后可以通过调用Buffer.reset()恢复到这个position。</p>
-<pre><code>public final Buffer mark() {
-    mark = position;
-    return this;
-}
-
-public final Buffer reset() {
-    int m = mark;
-    if (m &lt; 0)
-        throw new InvalidMarkException();
-    position = m;
-    return this;
-}
-</code></pre><p>下面通过一个例子来看看mark和rest的方法</p>
-<pre><code>import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-
-public class MarkDemo {
-    public static void main(String[] args) {
-
-        try {
-            // 初始化一个字节数组，内有5个字节的数据
-            byte[] bytes = { 1, 2, 3, 4, 5 };
-            // 用一个ByteArrayInputStream来读取这个字节数组
-            ByteArrayInputStream in = new ByteArrayInputStream(bytes);
-            // 将ByteArrayInputStream包含在一个BufferedInputStream，并初始化缓冲区大小为2。
-            BufferedInputStream bis = new BufferedInputStream(in, 2);
-            // 读取字节1
-            System.out.print(bis.read() + &quot;,&quot;);
-            // 在字节2处做标记，同时设置readlimit参数为1
-            // 根据JAVA文档mark以后最多只能读取1个字节，否则mark标记失效，但实际运行结果不是这样
-            System.out.println(&quot;mark&quot;);
-            bis.mark(1);
-            /*
-             * 连续读取两个字节，超过了readlimit的大小，mark标记仍有效
-             */
-            // 连续读取两个字节
-            System.out.print(bis.read() + &quot;,&quot;);
-            System.out.print(bis.read() + &quot;,&quot;);
-            // 调用reset方法，未发生异常，说明mark标记仍有效。
-            // 因为，虽然readlimit参数为1，但是这个BufferedInputStream类的缓冲区大小为2，
-            // 所以允许读取2字节
-            System.out.println(&quot;reset&quot;);
-            bis.reset();
-
-            /*
-             * 连续读取3个字节，超过了缓冲区大小，mark标记失效。
-             * 在这个例子中BufferedInputStream类的缓冲区大小大于readlimit, mark标记由缓冲区大小决定
-             */
-            // reset重置后连续读取3个字节，超过了BufferedInputStream类的缓冲区大小
-            System.out.print(bis.read() + &quot;,&quot;);
-            System.out.print(bis.read() + &quot;,&quot;);
-            System.out.print(bis.read() + &quot;,&quot;);
-            // 再次调用reset重置，抛出异常，说明mark后读取3个字节，mark标记失效
-            System.out.println(&quot;reset again&quot;);
-            bis.reset();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-}
-</code></pre>
-          
+          缓冲区缓冲区基础缓冲区概念缓冲区是包在一个对象内的基本数据元素数组。Buffer 类相比一个简单数组的优点是它将关于数据的数据内容和信息包含在一个单一的对象中。Buffer 类以及它专有的子类定义了一
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/10/Buffer/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -626,9 +510,16 @@ public class MarkDemo {
       
         
           
-            <p>#测试</p>
+          #测试
 
           
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/10/09/Spring源码之Autowired/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
@@ -768,9 +659,15 @@ public class MarkDemo {
       
         
           
-            <h2 id="开篇寄语"><a href="#开篇寄语" class="headerlink" title="开篇寄语"></a>开篇寄语</h2><p>一直想自己搭建一个博客，但是身为资深懒人，什么都不愿意去做，正好趁着闲时抓紧时间去做一下，不然肯定又拖了。<br>主要分享一些工作中遇到的问题和一些面试问题。<br>因为我本人是学java的，所以一般是java的代码。</p>
-
-          
+          开篇寄语一直想自己搭建一个博客，但是身为资深懒人，什么都不愿意去做，正好趁着闲时抓紧时间去做一下，不然肯定又拖了。主要分享一些工作中遇到的问题和一些面试问题。因为我本人是学java的，所以一般是jav
+          ...
+          <!--noindex-->
+          <div class="post-button text-center">
+            <a class="btn" href="/2017/09/27/test/#more" rel="contents">
+              阅读全文 &raquo;
+            </a>
+          </div>
+          <!--/noindex-->
         
       
     </div>
