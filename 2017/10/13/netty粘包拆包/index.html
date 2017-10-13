@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="netty," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="什么是TCP粘包/拆包首先了解什么是长连接和短连接长连接： Client方与Server方先建立通讯连接，连接建立后不断开， 然后再进行报文发送和接收。短连接：Client方与Server每进行一次报文收发交易时才进行通讯连接，交易完毕后立即断开连接。 什么时候会出现粘包问题 如果用tcp每次发送数据，就与对方建立连接，然后双方发送完一段数据后，就关闭连接，这样就不会出现粘包问题（因为只有一种包结">
+<meta name="keywords" content="netty">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netty粘包拆包">
+<meta property="og:url" content="http://yoursite.com/2017/10/13/netty粘包拆包/index.html">
+<meta property="og:site_name" content="LiJia&#39;s Dream">
+<meta property="og:description" content="什么是TCP粘包/拆包首先了解什么是长连接和短连接长连接： Client方与Server方先建立通讯连接，连接建立后不断开， 然后再进行报文发送和接收。短连接：Client方与Server每进行一次报文收发交易时才进行通讯连接，交易完毕后立即断开连接。 什么时候会出现粘包问题 如果用tcp每次发送数据，就与对方建立连接，然后双方发送完一段数据后，就关闭连接，这样就不会出现粘包问题（因为只有一种包结">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-4160adc27d909631.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-f45c7b5c6ed02d5b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-f233247e9379d709.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-476d7092c87c695e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-c2079a5427c48b86.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-067580bde8095531.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-2fbac31ddceff713.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-776cb343914cefbb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-90610d8095178f09.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-ea4756fefba91a92.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-6d3ae3ded964318f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-9ef656ae936cd937.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2017-10-13T08:53:46.352Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="netty粘包拆包">
+<meta name="twitter:description" content="什么是TCP粘包/拆包首先了解什么是长连接和短连接长连接： Client方与Server方先建立通讯连接，连接建立后不断开， 然后再进行报文发送和接收。短连接：Client方与Server每进行一次报文收发交易时才进行通讯连接，交易完毕后立即断开连接。 什么时候会出现粘包问题 如果用tcp每次发送数据，就与对方建立连接，然后双方发送完一段数据后，就关闭连接，这样就不会出现粘包问题（因为只有一种包结">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4714843-4160adc27d909631.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/10/13/netty粘包拆包/"/>
+
+
+
+
+
+  <title>netty粘包拆包 | LiJia's Dream</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?b5729751435834bd00d056a469a8894c";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">LiJia's Dream</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">努力改掉懒惰的习惯！</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/13/netty粘包拆包/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lijia">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="LiJia's Dream">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">netty粘包拆包</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-13T16:53:02+08:00">
+                2017-10-13
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/netty/" itemprop="url" rel="index">
+                    <span itemprop="name">netty</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="什么是TCP粘包-拆包"><a href="#什么是TCP粘包-拆包" class="headerlink" title="什么是TCP粘包/拆包"></a>什么是TCP粘包/拆包</h1><p>首先了解什么是长连接和短连接<br><strong>长连接：</strong> Client方与Server方先建立通讯连接，连接建立后不断开， 然后再进行报文发送和接收。<br><strong>短连接：</strong>Client方与Server每进行一次报文收发交易时才进行通讯连接，交易完毕后立即断开连接。</p>
+<h1 id="什么时候会出现粘包问题"><a href="#什么时候会出现粘包问题" class="headerlink" title="什么时候会出现粘包问题"></a>什么时候会出现粘包问题</h1><ol>
+<li><strong>如果用tcp每次发送数据，就与对方建立连接，然后双方发送完一段数据后，就关闭连接，这样就不会出现粘包问题</strong>（因为只有一种包结构,类似于http协议）。关闭连接主要要双方都发送close连接（参考tcp关闭协议）。<br>如：A需要发送一段字符串给B，那么A与B建立连接，然后发送双方都默认好的协议字符如”hello，world”，然后B收到报文后，就将缓冲区数据接收,然后关闭连接，这样粘包问题不用考虑到，因为大家都知道是发送一段字符。</li>
+<li><strong>如果发送数据无结构，如文件传输，这样发送方只管发送，接收方只管接收存储就ok，也不用考虑粘包</strong></li>
+<li><strong>在流传输中出现，UDP不会出现粘包，因为它有消息边界</strong></li>
+<li>如果双方建立连接，需要在连接后一段时间内发送不同结构数据，如连接后，有好几种结构：<br> (1)：”Hello，world”<br> (2)：”Hello，lijia”<br>如果发送方连续将这两个包都发出去了，接收方接受的信息可能是”Hello，worldHello，lijia“。这就需要拆包，所以双方应该规定一个较好的包结构，所以一般可能会在头加一个数据长度之类的包，以确保接收。<br><strong>所以：粘包出现原因<br>1 发送端需要等缓冲区满才发送出去，造成粘包<br>2 接收方不及时接收缓冲区的包，造成多个包接收</strong><br>下面的图显示几种可能性</li>
+</ol>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-4160adc27d909631.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
+<p>客服端发送两个包给服务端，服务端读取字节数不确定，可能是上面三种情况：</p>
+<ul>
+<li>a、分别获取两个独立的包，不存在粘包，拆包的情况</li>
+<li>b、一次获取两个完整的数据包，这就是粘包</li>
+<li>c、第一次获取D1和部分D2数据，第二次获取D2剩余内容，这就是拆包</li>
+<li><p>还有一种可能，就是多次拆包，即服务端接收划窗小，而D1，D2又比较大</p>
+<h1 id="粘包的解决策略"><a href="#粘包的解决策略" class="headerlink" title="粘包的解决策略"></a>粘包的解决策略</h1><p>1、发送端给每个数据包添加包首部，首部中应该至少包含数据包的长度，这样接收端在接收到数据后，通过读取包首部的长度字段，便知道每一个数据包的实际长度了。<br>2、发送端将每个数据包封装为固定长度（不够的可以通过补0填充），这样接收端每次从接收缓冲区中读取固定长度的数据就自然而然的把每个数据包拆分开来。<br>3、可以在数据包之间设置边界，如添加特殊符号，这样，接收端通过这个边界就可以将不同的数据包拆分开。<br>4、其他<br>首先模拟去看着这个问题<br><strong>TimeServer</strong></p>
+<p>  import io.netty.bootstrap.ServerBootstrap;<br>  import io.netty.channel.ChannelFuture;<br>  import io.netty.channel.ChannelInitializer;<br>  import io.netty.channel.ChannelOption;<br>  import io.netty.channel.EventLoopGroup;<br>  import io.netty.channel.nio.NioEventLoopGroup;<br>  import io.netty.channel.socket.SocketChannel;<br>  import io.netty.channel.socket.nio.NioServerSocketChannel;</p>
+<p>  public class TimeServer {</p>
+<pre><code>public void bind(int port) throws Exception {
+// 配置服务端的NIO线程组
+EventLoopGroup bossGroup = new NioEventLoopGroup();
+EventLoopGroup workerGroup = new NioEventLoopGroup();
+try {
+    ServerBootstrap b = new ServerBootstrap();
+    b.group(bossGroup, workerGroup)
+        .channel(NioServerSocketChannel.class)
+        .option(ChannelOption.SO_BACKLOG, 1024)
+        .childHandler(new ChildChannelHandler());
+    // 绑定端口，同步等待成功
+    ChannelFuture f = b.bind(port).sync();
+
+    // 等待服务端监听端口关闭
+    f.channel().closeFuture().sync();
+} finally {
+    // 优雅退出，释放线程池资源
+    bossGroup.shutdownGracefully();
+    workerGroup.shutdownGracefully();
+}
+}
+
+private class ChildChannelHandler extends ChannelInitializer&lt;SocketChannel&gt; {
+@Override
+protected void initChannel(SocketChannel arg0) throws Exception {
+    arg0.pipeline().addLast(new TimeServerHandler());
+}
+
+}
+
+/**
+ * @param args
+ * @throws Exception
+ */
+public static void main(String[] args) throws Exception {
+int port = 8080;
+if (args != null &amp;&amp; args.length &gt; 0) {
+    try {
+    port = Integer.valueOf(args[0]);
+    } catch (NumberFormatException e) {
+    // 采用默认值
+    }
+}
+new TimeServer().bind(port);
+}
+</code></pre><p>  }<br><strong>TimeServerHandler</strong></p>
+<p>  import io.netty.buffer.ByteBuf;<br>  import io.netty.buffer.Unpooled;<br>  import io.netty.channel.ChannelHandlerAdapter;<br>  import io.netty.channel.ChannelHandlerContext;</p>
+</li>
+</ul>
+<pre><code>public class TimeServerHandler extends ChannelHandlerAdapter {
+
+    private int counter;
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg)
+        throws Exception {
+    ByteBuf buf = (ByteBuf) msg;
+    byte[] req = new byte[buf.readableBytes()];
+    buf.readBytes(req);
+    String body = new String(req, &quot;UTF-8&quot;).substring(0, req.length
+        - System.getProperty(&quot;line.separator&quot;).length());
+    System.out.println(&quot;The time server receive order : &quot; + body
+        + &quot; ; the counter is : &quot; + ++counter);
+    String currentTime = &quot;QUERY TIME ORDER&quot;.equalsIgnoreCase(body) ? new java.util.Date(
+        System.currentTimeMillis()).toString() : &quot;BAD ORDER&quot;;
+    currentTime = currentTime + System.getProperty(&quot;line.separator&quot;);
+    ByteBuf resp = Unpooled.copiedBuffer(currentTime.getBytes());
+    ctx.writeAndFlush(resp);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    ctx.close();
+    }
+}
+</code></pre><p><strong>TimeClient</strong><br>    import io.netty.bootstrap.Bootstrap;<br>    import io.netty.channel.ChannelFuture;<br>    import io.netty.channel.ChannelInitializer;<br>    import io.netty.channel.ChannelOption;<br>    import io.netty.channel.EventLoopGroup;<br>    import io.netty.channel.nio.NioEventLoopGroup;<br>    import io.netty.channel.socket.SocketChannel;<br>    import io.netty.channel.socket.nio.NioSocketChannel;</p>
+<pre><code>public class TimeClient {
+
+    public void connect(int port, String host) throws Exception {
+    // 配置客户端NIO线程组
+    EventLoopGroup group = new NioEventLoopGroup();
+    try {
+        Bootstrap b = new Bootstrap();
+        b.group(group).channel(NioSocketChannel.class)
+            .option(ChannelOption.TCP_NODELAY, true)
+            .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
+            @Override
+            public void initChannel(SocketChannel ch)
+                throws Exception {
+
+                ch.pipeline().addLast(new TimeClientHandler());
+            }
+            });
+
+        // 发起异步连接操作
+        ChannelFuture f = b.connect(host, port).sync();
+
+        // 当代客户端链路关闭
+        f.channel().closeFuture().sync();
+    } finally {
+        // 优雅退出，释放NIO线程组
+        group.shutdownGracefully();
+    }
+    }
+
+    /**
+     * @param args
+     * @throws Exception
+     */
+    public static void main(String[] args) throws Exception {
+    int port = 8080;
+    if (args != null &amp;&amp; args.length &gt; 0) {
+        try {
+        port = Integer.valueOf(args[0]);
+        } catch (NumberFormatException e) {
+        // 采用默认值
+        }
+    }
+    new TimeClient().connect(port, &quot;127.0.0.1&quot;);
+    }
+}
+</code></pre><p><strong>TimeClientHandler</strong></p>
+<pre><code>import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerAdapter;
+import io.netty.channel.ChannelHandlerContext;
+
+import java.util.logging.Logger;
+
+public class TimeClientHandler extends ChannelHandlerAdapter {
+
+    private static final Logger logger = Logger
+        .getLogger(TimeClientHandler.class.getName());
+
+    private int counter;
+
+    private byte[] req;
+
+    /**
+     * Creates a client-side handler.
+     */
+    public TimeClientHandler() {
+    req = (&quot;QUERY TIME ORDER&quot; + System.getProperty(&quot;line.separator&quot;))
+        .getBytes();
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) {
+    ByteBuf message = null;
+    for (int i = 0; i &lt; 100; i++) {
+        message = Unpooled.buffer(req.length);
+        message.writeBytes(req);
+        ctx.writeAndFlush(message);
+    }
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg)
+        throws Exception {
+    ByteBuf buf = (ByteBuf) msg;
+    byte[] req = new byte[buf.readableBytes()];
+    buf.readBytes(req);
+    String body = new String(req, &quot;UTF-8&quot;);
+    System.out.println(&quot;Now is : &quot; + body + &quot; ; the counter is : &quot;
+        + ++counter);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    // 释放资源
+    logger.warning(&quot;Unexpected exception from downstream : &quot;
+        + cause.getMessage());
+    ctx.close();
+    }
+}
+</code></pre><p>执行结果：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-f45c7b5c6ed02d5b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="server"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-f233247e9379d709.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="client"><br>服务端收到2条消息，理论上是100条，发生了粘包。客户端也只收到了2条消息</p>
+<h1 id="Netty如何去处理这个问题呢"><a href="#Netty如何去处理这个问题呢" class="headerlink" title="Netty如何去处理这个问题呢"></a>Netty如何去处理这个问题呢</h1><h2 id="LineBasedFrameDecoder"><a href="#LineBasedFrameDecoder" class="headerlink" title="LineBasedFrameDecoder"></a>LineBasedFrameDecoder</h2><p>在上面代码的TimeServer和ClientServer的initChannel方法中，分别加上</p>
+<pre><code>    arg0.pipeline().addLast(new LineBasedFrameDecoder(1024));
+arg0.pipeline().addLast(new StringDecoder());
+</code></pre><p>和<br>    ch.pipeline().addLast(new LineBasedFrameDecoder(1024));<br>    ch.pipeline().addLast(new StringDecoder());<br>如下图：</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-476d7092c87c695e.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""><br>然后将TimeServerHandler和TimeClientHandler中channelRead方法的获取body字符串改成<br>TimeServerHandler中修改：</p>
+<pre><code> public void channelRead(ChannelHandlerContext ctx, Object msg)
+     throws Exception {
+     String body = (String) msg;
+     System.out.println(&quot;The time server receive order : &quot; + body
+     + &quot; ; the counter is : &quot; + ++counter);
+     String currentTime = &quot;QUERY TIME ORDER&quot;.equalsIgnoreCase(body) ? new java.util.Date(
+     System.currentTimeMillis()).toString() : &quot;BAD ORDER&quot;;
+     currentTime = currentTime + System.getProperty(&quot;line.separator&quot;);
+     ByteBuf resp = Unpooled.copiedBuffer(currentTime.getBytes());
+     ctx.writeAndFlush(resp);
+}
+</code></pre><p>TimeClientHandler中修改：</p>
+<pre><code>@Override
+public void channelRead(ChannelHandlerContext ctx, Object msg)
+    throws Exception {
+ String body = (String) msg;
+System.out.println(&quot;Now is : &quot; + body + &quot; ; the counter is : &quot;
+    + ++counter);
+}
+</code></pre><p>那么再执行代码，会出现</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-c2079a5427c48b86.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="server"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-067580bde8095531.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="client"><br>这就是正确结果。</p>
+<h1 id="LineBasedFrameDecoder的原理"><a href="#LineBasedFrameDecoder的原理" class="headerlink" title="LineBasedFrameDecoder的原理"></a>LineBasedFrameDecoder的原理</h1><p>LineBasedFrameDecoder的工作原理就是依次遍历ByteBuf中的可读字节，判断是否有”\n“或者”\r\n”，如果有，就以此为结束位置，从可读索引到结束位置区间的字节组成了一个字符串。它是以换行符为结束标志的解码器，支持携带结束符或者不携带两种方式，支持配置单行的最大长度。如果读到最大长度还没有发现换行符，就会抛出异常。同时忽略之前读到的字节。<br>如果不是以换行结束呢，怎么解决？</p>
+<h1 id="DelimiterBasedFrameDecoder"><a href="#DelimiterBasedFrameDecoder" class="headerlink" title="DelimiterBasedFrameDecoder"></a>DelimiterBasedFrameDecoder</h1><p>EchoServer :</p>
+<pre><code>import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
+
+public class EchoServer {
+    public void bind(int port) throws Exception {
+    // 配置服务端的NIO线程组
+    EventLoopGroup bossGroup = new NioEventLoopGroup();
+    EventLoopGroup workerGroup = new NioEventLoopGroup();
+    try {
+        ServerBootstrap b = new ServerBootstrap();
+        b.group(bossGroup, workerGroup)
+            .channel(NioServerSocketChannel.class)
+            .option(ChannelOption.SO_BACKLOG, 100)
+            .handler(new LoggingHandler(LogLevel.INFO))
+            .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
+            @Override
+            public void initChannel(SocketChannel ch)
+                throws Exception {
+                ByteBuf delimiter = Unpooled.copiedBuffer(&quot;$_&quot;
+                    .getBytes());
+                ch.pipeline().addLast(
+                    new DelimiterBasedFrameDecoder(1024,
+                        delimiter));
+                ch.pipeline().addLast(new StringDecoder());
+                ch.pipeline().addLast(new EchoServerHandler());
+            }
+            });
+
+        // 绑定端口，同步等待成功
+        ChannelFuture f = b.bind(port).sync();
+
+        // 等待服务端监听端口关闭
+        f.channel().closeFuture().sync();
+    } finally {
+        // 优雅退出，释放线程池资源
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
+    }
+    }
+
+    public static void main(String[] args) throws Exception {
+    int port = 8080;
+    if (args != null &amp;&amp; args.length &gt; 0) {
+        try {
+        port = Integer.valueOf(args[0]);
+        } catch (NumberFormatException e) {
+        // 采用默认值
+        }
+    }
+    new EchoServer().bind(port);
+    }
+}
+</code></pre><p>EchoServerHandler :</p>
+<pre><code>import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerAdapter;
+import io.netty.channel.ChannelHandlerContext;
+
+@Sharable
+public class EchoServerHandler extends ChannelHandlerAdapter {
+
+    int counter = 0;
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg)
+        throws Exception {
+        String body = (String) msg;
+        System.out.println(&quot;This is &quot; + ++counter + &quot; times receive client : [&quot;
+            + body + &quot;]&quot;);
+        body += &quot;$_&quot;;
+        ByteBuf echo = Unpooled.copiedBuffer(body.getBytes());
+        ctx.writeAndFlush(echo);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        cause.printStackTrace();
+        ctx.close();// 发生异常，关闭链路
+    }
+}
+</code></pre><p>EchoClient :</p>
+<pre><code>import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
+
+public class EchoClient {
+
+    public void connect(int port, String host) throws Exception {
+    // 配置客户端NIO线程组
+    EventLoopGroup group = new NioEventLoopGroup();
+    try {
+        Bootstrap b = new Bootstrap();
+        b.group(group).channel(NioSocketChannel.class)
+            .option(ChannelOption.TCP_NODELAY, true)
+            .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
+            @Override
+            public void initChannel(SocketChannel ch)
+                throws Exception {
+                ByteBuf delimiter = Unpooled.copiedBuffer(&quot;$_&quot;
+                    .getBytes());
+                ch.pipeline().addLast(
+                    new DelimiterBasedFrameDecoder(1024,
+                        delimiter));
+                ch.pipeline().addLast(new StringDecoder());
+                ch.pipeline().addLast(new EchoClientHandler());
+            }
+            });
+
+        // 发起异步连接操作
+        ChannelFuture f = b.connect(host, port).sync();
+
+        // 当代客户端链路关闭
+        f.channel().closeFuture().sync();
+    } finally {
+        // 优雅退出，释放NIO线程组
+        group.shutdownGracefully();
+    }
+    }
+
+    /**
+     * @param args
+     * @throws Exception
+     */
+    public static void main(String[] args) throws Exception {
+    int port = 8080;
+    if (args != null &amp;&amp; args.length &gt; 0) {
+        try {
+        port = Integer.valueOf(args[0]);
+        } catch (NumberFormatException e) {
+        // 采用默认值
+        }
+    }
+    new EchoClient().connect(port, &quot;127.0.0.1&quot;);
+    }
+}
+</code></pre><p>TimeClientHandler :</p>
+<pre><code>import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerAdapter;
+import io.netty.channel.ChannelHandlerContext;
+
+public class TimeClientHandler extends ChannelHandlerAdapter {
+
+    private int counter;
+
+    static final String ECHO_REQ = &quot;Hi, Lilinfeng. Welcome to Netty.$_&quot;;
+
+    /**
+     * Creates a client-side handler.
+     */
+    public TimeClientHandler () {
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) {
+    // ByteBuf buf = UnpooledByteBufAllocator.DEFAULT.buffer(ECHO_REQ
+    // .getBytes().length);
+    // buf.writeBytes(ECHO_REQ.getBytes());
+        for (int i = 0; i &lt; 10; i++) {
+            ctx.writeAndFlush(Unpooled.copiedBuffer(ECHO_REQ.getBytes()));
+        }
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg)
+        throws Exception {
+        System.out.println(&quot;This is &quot; + ++counter + &quot; times receive server : [&quot;+ msg + &quot;]&quot;);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        ctx.flush();
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    cause.printStackTrace();
+    ctx.close();
+    }
+}
+</code></pre><p>运行之后出现</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-2fbac31ddceff713.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="server"></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-776cb343914cefbb.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="client"></p>
+<p>如果把EchoServer的<br>ch.pipeline().addLast(new DelimiterBasedFrameDecoder(1024,delimiter));注释掉<br><img src="http://upload-images.jianshu.io/upload_images/4714843-90610d8095178f09.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""><br>那么server获取的字符串就是</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-ea4756fefba91a92.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="结果"><br>由于没有分隔符解码器，导致了一次性读取客户端所有数据，就是典型的tcp粘包问题。</p>
+<h1 id="FixedLengthFrameDecoder"><a href="#FixedLengthFrameDecoder" class="headerlink" title="FixedLengthFrameDecoder"></a>FixedLengthFrameDecoder</h1><p>EchoServer ：</p>
+<pre><code>import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.FixedLengthFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
+
+public class EchoServer {
+    public void bind(int port) throws Exception {
+    // 配置服务端的NIO线程组
+    EventLoopGroup bossGroup = new NioEventLoopGroup();
+    EventLoopGroup workerGroup = new NioEventLoopGroup();
+    try {
+        ServerBootstrap b = new ServerBootstrap();
+        b.group(bossGroup, workerGroup)
+            .channel(NioServerSocketChannel.class)
+            .option(ChannelOption.SO_BACKLOG, 100)
+            .handler(new LoggingHandler(LogLevel.INFO))
+            .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
+            @Override
+            public void initChannel(SocketChannel ch)
+                throws Exception {
+                ch.pipeline().addLast(
+                    new FixedLengthFrameDecoder(20));
+                ch.pipeline().addLast(new StringDecoder());
+                ch.pipeline().addLast(new EchoServerHandler());
+            }
+            });
+
+        // 绑定端口，同步等待成功
+        ChannelFuture f = b.bind(port).sync();
+
+        // 等待服务端监听端口关闭
+        f.channel().closeFuture().sync();
+    } finally {
+        // 优雅退出，释放线程池资源
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
+    }
+    }
+
+    public static void main(String[] args) throws Exception {
+    int port = 8080;
+    if (args != null &amp;&amp; args.length &gt; 0) {
+        try {
+        port = Integer.valueOf(args[0]);
+        } catch (NumberFormatException e) {
+        // 采用默认值
+        }
+    }
+    new EchoServer().bind(port);
+    }
+}
+</code></pre><p>EchoServerHandler ：</p>
+<pre><code>import io.netty.channel.ChannelHandler.Sharable;
+import io.netty.channel.ChannelHandlerAdapter;
+import io.netty.channel.ChannelHandlerContext;
+
+@Sharable
+public class EchoServerHandler extends ChannelHandlerAdapter {
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg)
+        throws Exception {
+    System.out.println(&quot;Receive client : [&quot; + msg + &quot;]&quot;);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+    cause.printStackTrace();
+    ctx.close();// 发生异常，关闭链路
+    }
+}
+</code></pre><p>启动EchoServer<br>然后从cmd中启动telnet localhost 8080,我以1234567890一直循环输入，但是由于FixedLengthFrameDecoder设置的大小为20，那么每次不超过20就不会返回，如果超过20，输出20个字符，剩下的以另一个包形式返回。</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-6d3ae3ded964318f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-9ef656ae936cd937.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="结果"></p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p><strong>LineBasedFrameDecoder:</strong>以换行处理粘包<br><strong>DelimiterBasedFrameDecoder：</strong>设置固定的分隔符，然后解码去解决粘包问题<br><strong>FixedLengthFrameDecoder：</strong>对固定长度的消息进行自动解码</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/netty/" rel="tag"># netty</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/13/netty入门/" rel="next" title="netty入门">
+                <i class="fa fa-chevron-left"></i> netty入门
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">lijia</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">8</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          <div class="links-of-author motion-element">
+            
+          </div>
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是TCP粘包-拆包"><span class="nav-number">1.</span> <span class="nav-text">什么是TCP粘包/拆包</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#什么时候会出现粘包问题"><span class="nav-number">2.</span> <span class="nav-text">什么时候会出现粘包问题</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#粘包的解决策略"><span class="nav-number">3.</span> <span class="nav-text">粘包的解决策略</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Netty如何去处理这个问题呢"><span class="nav-number">4.</span> <span class="nav-text">Netty如何去处理这个问题呢</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#LineBasedFrameDecoder"><span class="nav-number">4.1.</span> <span class="nav-text">LineBasedFrameDecoder</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#LineBasedFrameDecoder的原理"><span class="nav-number">5.</span> <span class="nav-text">LineBasedFrameDecoder的原理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#DelimiterBasedFrameDecoder"><span class="nav-number">6.</span> <span class="nav-text">DelimiterBasedFrameDecoder</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#FixedLengthFrameDecoder"><span class="nav-number">7.</span> <span class="nav-text">FixedLengthFrameDecoder</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">8.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lijia</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
