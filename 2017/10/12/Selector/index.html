@@ -88,7 +88,7 @@
 <meta property="og:description" content="选择器的概念Selector是Java NIO中的一个组件，用于检查一个或多个NIO Channel的状态是否处于可读、可写。如此可以实现单线程管理多个channels,也就是可以管理多个网络链接。 为什么要用选择器用单线程处理多个channels的好处是我需要更少的线程来处理channel。实际上，你甚至可以用一个线程来处理所有的channels。从操作系统的角度来看，切换线程开销是比较昂贵的，">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-3b67c1c21c72772e.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-10-12T01:49:37.170Z">
+<meta property="og:updated_time" content="2017-10-13T01:40:09.794Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Selector">
 <meta name="twitter:description" content="选择器的概念Selector是Java NIO中的一个组件，用于检查一个或多个NIO Channel的状态是否处于可读、可写。如此可以实现单线程管理多个channels,也就是可以管理多个网络链接。 为什么要用选择器用单线程处理多个channels的好处是我需要更少的线程来处理channel。实际上，你甚至可以用一个线程来处理所有的channels。从操作系统的角度来看，切换线程开销是比较昂贵的，">
@@ -463,7 +463,282 @@ while(true) {
     keyIterator.remove();
     }
 }
-</code></pre>
+</code></pre><p>引用李林峰老师《netty权威指南》的代码</p>
+<p><strong>server</strong></p>
+<pre><code>public class TimeServer {
+    public static void main(String[] args) throws IOException {
+    int port = 8080;
+    if (args != null &amp;&amp; args.length &gt; 0) {
+        try {
+        port = Integer.valueOf(args[0]);
+        } catch (NumberFormatException e) {
+        // 采用默认值
+        }
+    }
+    MultiplexerTimeServer timeServer = new MultiplexerTimeServer(port);
+    new Thread(timeServer, &quot;NIO-MultiplexerTimeServer-001&quot;).start();
+    }
+}
+
+class MultiplexerTimeServer implements Runnable {
+
+    private Selector selector;
+
+    private ServerSocketChannel servChannel;
+
+    private volatile boolean stop;
+
+    /**
+     * 初始化多路复用器、绑定监听端口
+     * 
+     * @param port
+     */
+    public MultiplexerTimeServer(int port) {
+    try {
+        selector = Selector.open();
+        servChannel = ServerSocketChannel.open();
+        servChannel.configureBlocking(false);
+        servChannel.socket().bind(new InetSocketAddress(port), 1024);
+        servChannel.register(selector, SelectionKey.OP_ACCEPT);
+        System.out.println(&quot;The time server is start in port : &quot; + port);
+    } catch (IOException e) {
+        e.printStackTrace();
+        System.exit(1);
+    }
+    }
+
+    public void stop() {
+    this.stop = true;
+    }
+
+    /*
+     * (non-Javadoc)
+     * 
+     * @see java.lang.Runnable#run()
+     */
+    public void run() {
+    while (!stop) {
+        try {
+        selector.select(1000);
+        Set&lt;SelectionKey&gt; selectedKeys = selector.selectedKeys();
+        Iterator&lt;SelectionKey&gt; it = selectedKeys.iterator();
+        SelectionKey key = null;
+        while (it.hasNext()) {
+            key = it.next();
+            it.remove();
+            try {
+            handleInput(key);
+            } catch (Exception e) {
+            if (key != null) {
+                key.cancel();
+                if (key.channel() != null)
+                key.channel().close();
+            }
+            }
+        }
+        } catch (Throwable t) {
+        t.printStackTrace();
+        }
+    }
+
+    // 多路复用器关闭后，所有注册在上面的Channel和Pipe等资源都会被自动去注册并关闭，所以不需要重复释放资源
+    if (selector != null)
+        try {
+        selector.close();
+        } catch (IOException e) {
+        e.printStackTrace();
+        }
+    }
+
+    private void handleInput(SelectionKey key) throws IOException {
+
+    if (key.isValid()) {
+        // 处理新接入的请求消息
+        if (key.isAcceptable()) {
+        // Accept the new connection
+        ServerSocketChannel ssc = (ServerSocketChannel) key.channel();
+        SocketChannel sc = ssc.accept();
+        sc.configureBlocking(false);
+        // Add the new connection to the selector
+        sc.register(selector, SelectionKey.OP_READ);
+        }
+        if (key.isReadable()) {
+        // Read the data
+        SocketChannel sc = (SocketChannel) key.channel();
+        ByteBuffer readBuffer = ByteBuffer.allocate(1024);
+        int readBytes = sc.read(readBuffer);
+        if (readBytes &gt; 0) {
+            readBuffer.flip();
+            byte[] bytes = new byte[readBuffer.remaining()];
+            readBuffer.get(bytes);
+            String body = new String(bytes, &quot;UTF-8&quot;);
+            System.out.println(&quot;The time server receive order : &quot;
+                + body);
+            String currentTime = &quot;QUERY TIME ORDER&quot;
+                .equalsIgnoreCase(body) ? new java.util.Date(
+                System.currentTimeMillis()).toString()
+                : &quot;BAD ORDER&quot;;
+            doWrite(sc, currentTime);
+        } else if (readBytes &lt; 0) {
+            // 对端链路关闭
+            key.cancel();
+            sc.close();
+        } else
+            ; // 读到0字节，忽略
+        }
+    }
+    }
+
+    private void doWrite(SocketChannel channel, String response)
+        throws IOException {
+    if (response != null &amp;&amp; response.trim().length() &gt; 0) {
+        byte[] bytes = response.getBytes();
+        ByteBuffer writeBuffer = ByteBuffer.allocate(bytes.length);
+        writeBuffer.put(bytes);
+        writeBuffer.flip();
+        channel.write(writeBuffer);
+    }
+    }
+}
+</code></pre><p><strong>client</strong></p>
+<pre><code>public class TimeClient {
+    public static void main(String[] args) {
+
+    int port = 8080;
+    if (args != null &amp;&amp; args.length &gt; 0) {
+        try {
+        port = Integer.valueOf(args[0]);
+        } catch (NumberFormatException e) {
+        // 采用默认值
+        }
+    }
+    new Thread(new TimeClientHandle(&quot;127.0.0.1&quot;, port), &quot;TimeClient-001&quot;)
+        .start();
+    }
+}
+class TimeClientHandle implements Runnable {
+
+private String host;
+private int port;
+
+private Selector selector;
+private SocketChannel socketChannel;
+
+private volatile boolean stop;
+
+public TimeClientHandle(String host, int port) {
+    this.host = host == null ? &quot;127.0.0.1&quot; : host;
+    this.port = port;
+    try {
+        selector = Selector.open();
+        socketChannel = SocketChannel.open();
+        socketChannel.configureBlocking(false);
+    } catch (IOException e) {
+        e.printStackTrace();
+        System.exit(1);
+    }
+}
+
+/*
+ * (non-Javadoc)
+ * 
+ * @see java.lang.Runnable#run()
+ */
+public void run() {
+    try {
+        doConnect();
+    } catch (IOException e) {
+        e.printStackTrace();
+        System.exit(1);
+    }
+    while (!stop) {
+        try {
+            selector.select(1000);
+            Set&lt;SelectionKey&gt; selectedKeys = selector.selectedKeys();
+            Iterator&lt;SelectionKey&gt; it = selectedKeys.iterator();
+            SelectionKey key = null;
+            while (it.hasNext()) {
+                key = it.next();
+                it.remove();
+                try {
+                    handleInput(key);
+                } catch (Exception e) {
+                    if (key != null) {
+                        key.cancel();
+                        if (key.channel() != null)
+                            key.channel().close();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    // 多路复用器关闭后，所有注册在上面的Channel和Pipe等资源都会被自动去注册并关闭，所以不需要重复释放资源
+    if (selector != null)
+        try {
+            selector.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+}
+
+private void handleInput(SelectionKey key) throws IOException {
+
+    if (key.isValid()) {
+        // 判断是否连接成功
+        SocketChannel sc = (SocketChannel) key.channel();
+        if (key.isConnectable()) {
+            if (sc.finishConnect()) {
+                sc.register(selector, SelectionKey.OP_READ);
+                doWrite(sc);
+            } else
+                System.exit(1);// 连接失败，进程退出
+        }
+        if (key.isReadable()) {
+            ByteBuffer readBuffer = ByteBuffer.allocate(1024);
+            int readBytes = sc.read(readBuffer);
+            if (readBytes &gt; 0) {
+                readBuffer.flip();
+                byte[] bytes = new byte[readBuffer.remaining()];
+                readBuffer.get(bytes);
+                String body = new String(bytes, &quot;UTF-8&quot;);
+                System.out.println(&quot;Now is : &quot; + body);
+                this.stop = true;
+            } else if (readBytes &lt; 0) {
+                // 对端链路关闭
+                key.cancel();
+                sc.close();
+            } else
+                ; // 读到0字节，忽略
+        }
+    }
+
+}
+
+private void doConnect() throws IOException {
+    // 如果直接连接成功，则注册到多路复用器上，发送请求消息，读应答
+    if (socketChannel.connect(new InetSocketAddress(host, port))) {
+        socketChannel.register(selector, SelectionKey.OP_READ);
+        doWrite(socketChannel);
+    } else
+        socketChannel.register(selector, SelectionKey.OP_CONNECT);
+}
+
+private void doWrite(SocketChannel sc) throws IOException {
+    byte[] req = &quot;QUERY TIME ORDER&quot;.getBytes();
+    ByteBuffer writeBuffer = ByteBuffer.allocate(req.length);
+    writeBuffer.put(req);
+    writeBuffer.flip();
+    sc.write(writeBuffer);
+    if (!writeBuffer.hasRemaining())
+        System.out.println(&quot;Send order 2 server succeed.&quot;);
+}
+</code></pre><p>}</p>
+
       
     </div>
     
@@ -502,6 +777,10 @@ while(true) {
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/10/13/netty入门/" rel="prev" title="netty入门">
+                netty入门 <i class="fa fa-chevron-right"></i>
+              </a>
             
           </div>
         </div>
@@ -578,7 +857,7 @@ while(true) {
               
                 <a href="/archives">
               
-                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-count">7</span>
                   <span class="site-state-item-name">日志</span>
                 </a>
               </div>
@@ -589,7 +868,7 @@ while(true) {
               
               <div class="site-state-item site-state-categories">
                 <a href="/categories/index.html">
-                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-count">5</span>
                   <span class="site-state-item-name">分类</span>
                 </a>
               </div>
@@ -600,7 +879,7 @@ while(true) {
               
               <div class="site-state-item site-state-tags">
                 <a href="/tags/index.html">
-                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-count">6</span>
                   <span class="site-state-item-name">标签</span>
                 </a>
               </div>
