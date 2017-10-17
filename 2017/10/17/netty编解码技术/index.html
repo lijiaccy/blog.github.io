@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="netty," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="java序列化序列化是干什么的为了保存在内存中的各种对象的状态（也就是实例变量，不是方法），并且可以把保存的对象状态再读出来。虽然你可以用你自己的各种各样的方法来保存object states，但是Java给你提供一种应该比你自己好的保存对象状态的机制，那就是序列化。 java序列化之后码流太大首先通过一个列子来看看 import java.io.ByteArrayOutputStream; im">
+<meta name="keywords" content="netty">
+<meta property="og:type" content="article">
+<meta property="og:title" content="netty编解码技术">
+<meta property="og:url" content="http://yoursite.com/2017/10/17/netty编解码技术/index.html">
+<meta property="og:site_name" content="LiJia&#39;s Dream">
+<meta property="og:description" content="java序列化序列化是干什么的为了保存在内存中的各种对象的状态（也就是实例变量，不是方法），并且可以把保存的对象状态再读出来。虽然你可以用你自己的各种各样的方法来保存object states，但是Java给你提供一种应该比你自己好的保存对象状态的机制，那就是序列化。 java序列化之后码流太大首先通过一个列子来看看 import java.io.ByteArrayOutputStream; im">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-4da6792cfd19b1a4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-4c742b0fefbca6c3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2017-10-17T09:11:42.739Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="netty编解码技术">
+<meta name="twitter:description" content="java序列化序列化是干什么的为了保存在内存中的各种对象的状态（也就是实例变量，不是方法），并且可以把保存的对象状态再读出来。虽然你可以用你自己的各种各样的方法来保存object states，但是Java给你提供一种应该比你自己好的保存对象状态的机制，那就是序列化。 java序列化之后码流太大首先通过一个列子来看看 import java.io.ByteArrayOutputStream; im">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4714843-4da6792cfd19b1a4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/10/17/netty编解码技术/"/>
+
+
+
+
+
+  <title>netty编解码技术 | LiJia's Dream</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?b5729751435834bd00d056a469a8894c";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">LiJia's Dream</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">努力改掉懒惰的习惯！</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/17/netty编解码技术/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lijia">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="LiJia's Dream">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">netty编解码技术</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-17T17:11:04+08:00">
+                2017-10-17
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/netty/" itemprop="url" rel="index">
+                    <span itemprop="name">netty</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="java序列化"><a href="#java序列化" class="headerlink" title="java序列化"></a>java序列化</h1><h2 id="序列化是干什么的"><a href="#序列化是干什么的" class="headerlink" title="序列化是干什么的"></a>序列化是干什么的</h2><p>为了保存在内存中的各种对象的状态（也就是实例变量，不是方法），并且可以把保存的对象状态再读出来。虽然你可以用你自己的各种各样的方法来保存object states，但是Java给你提供一种应该比你自己好的保存对象状态的机制，那就是序列化。</p>
+<h1 id="java序列化之后码流太大"><a href="#java序列化之后码流太大" class="headerlink" title="java序列化之后码流太大"></a>java序列化之后码流太大</h1><p>首先通过一个列子来看看</p>
+<pre><code>import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.nio.ByteBuffer;
+
+public class UserInfo implements Serializable {
+
+    /**
+     * 默认的序列号
+     */
+    private static final long serialVersionUID = 1L;
+
+    private String userName;
+
+    private int id;
+
+    public UserInfo buildUserName(String userName) {
+    this.userName = userName;
+    return this;
+    }
+
+    public UserInfo buildUserID(int id) {
+    this.id = id;
+    return this;
+    }
+
+    public final String getUserName() {
+    return userName;
+    }
+    public final void setUserName(String userName) {
+    this.userName = userName;
+    }
+    public final int getUserID() {
+    return id;
+    }
+    public final void setUserID(int userID) {
+    this.id = userID;
+    }
+
+    public byte[] codeC() {
+    ByteBuffer buffer = ByteBuffer.allocate(1024);
+    byte[] value = this.userName.getBytes();
+    buffer.putInt(value.length);
+    buffer.put(value);
+    buffer.putInt(this.id);
+    buffer.flip();
+    value = null;
+    byte[] result = new byte[buffer.remaining()];
+    buffer.get(result);
+    return result;
+    }
+
+    public byte[] codeC(ByteBuffer buffer) {
+        buffer.clear();
+        byte[] value = this.userName.getBytes();
+        buffer.putInt(value.length);
+        buffer.put(value);
+        buffer.putInt(this.id);
+        buffer.flip();
+        value = null;
+        byte[] result = new byte[buffer.remaining()];
+        buffer.get(result);
+        return result;
+    }
+
+    public static void main(String[] args) throws IOException {
+        System.out.println(&quot;------------大小----------&quot;);
+        UserInfo info = new UserInfo();
+        info.buildUserID(100).buildUserName(&quot;Welcome to Netty&quot;);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream os = new ObjectOutputStream(bos);
+        os.writeObject(info);
+        os.flush();
+        os.close();
+        byte[] b = bos.toByteArray();
+        System.out.println(&quot;The jdk serializable length is : &quot; + b.length);
+        bos.close();
+        System.out.println(&quot;-------------------------------------&quot;);
+        System.out.println(&quot;The byte array serializable length is : &quot;
+                + info.codeC().length);
+
+
+        System.out.println(&quot;------------时间----------&quot;);
+
+        UserInfo info1 = new UserInfo();
+        info1.buildUserID(100).buildUserName(&quot;Welcome to Netty&quot;);
+        int loop = 1000000;
+        ByteArrayOutputStream bos1 = null;
+        ObjectOutputStream os1 = null;
+        long startTime = System.currentTimeMillis();
+        for (int i = 0; i &lt; loop; i++) {
+            bos1 = new ByteArrayOutputStream();
+            os1 = new ObjectOutputStream(bos1);
+            os1.writeObject(info1);
+            os1.flush();
+            os1.close();
+            byte[] b1 = bos.toByteArray();
+            bos.close();
+        }
+        long endTime = System.currentTimeMillis();
+        System.out.println(&quot;The jdk serializable cost time is  : &quot;
+                + (endTime - startTime) + &quot; ms&quot;);
+
+        System.out.println(&quot;-------------------------------------&quot;);
+
+        ByteBuffer buffer1 = ByteBuffer.allocate(1024);
+        startTime = System.currentTimeMillis();
+        for (int i = 0; i &lt; loop; i++) {
+            byte[] b1 = info.codeC(buffer1);
+        }
+        endTime = System.currentTimeMillis();
+        System.out.println(&quot;The byte array serializable cost time is : &quot;
+                + (endTime - startTime) + &quot; ms&quot;);
+
+    }
+
+}
+</code></pre><p>运行结果是：<br><img src="http://upload-images.jianshu.io/upload_images/4714843-4da6792cfd19b1a4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
+<p>上面是两个测试结果前面都是默认序列化之后的数据大小和序列化的时间，下面都是使用NIO的编解码去对对象进行编码。可以看出默认的Serializable 接口还有一些瑕疵。</p>
+<h1 id="编码框架"><a href="#编码框架" class="headerlink" title="编码框架"></a>编码框架</h1><h2 id="MessagePack编解码"><a href="#MessagePack编解码" class="headerlink" title="MessagePack编解码"></a>MessagePack编解码</h2><p>MessagePack的特点：</p>
+<ul>
+<li>编解码高效，性能高</li>
+<li>序列化之后的码流小</li>
+<li><p>支持跨语言<br>简单使用：<br>POJO:<strong>需要加上@Message</strong></p>
+<p>  import org.msgpack.annotation.Message;</p>
+<p>  @Message<br>  public class Student {</p>
+<pre><code>private int id;
+
+private String name;
+
+public int getId() {
+    return id;
+}
+public void setId(int id) {
+    this.id = id;
+}
+
+public String getName() {
+    return name;
+}
+
+public void setName(String name) {
+    this.name = name;
+}
+@Override
+public String toString() {
+    return &quot;Student [id=&quot; + id + &quot;, name=&quot; + name + &quot;]&quot;;
+}
+</code></pre><p>  }<br>测试类：</p>
+<pre><code>Student student = new Student();
+  student.setId(1);
+  student.setName(&quot;lijia&quot;);
+  MessagePack messagePack = new MessagePack();
+  try {
+      byte[] write = messagePack.write(student);
+      Value read = messagePack.read(write);
+      System.out.println(read);
+  } catch (IOException e) {
+      e.printStackTrace();
+  }
+</code></pre><p>运行结果：<br><img src="http://upload-images.jianshu.io/upload_images/4714843-4c742b0fefbca6c3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
+</li>
+</ul>
+<h2 id="Protobuf编解码"><a href="#Protobuf编解码" class="headerlink" title="Protobuf编解码"></a>Protobuf编解码</h2><p>这个我弄了一天，找到一个windows版本的，但是在电脑上运行不了。大致了解一下吧<br><strong>1 .proto文件</strong><br>相当于确定数据协议，数据结构中存在哪些数据，数据类型是怎么样<br><strong>2 modifiers</strong></p>
+<p>2-1 required 不可以增加或删除的字段，必须初始化</p>
+<p>2-2 optional 可选字段，可删除，可以不初始化</p>
+<p>2-3 repeated 可重复字段， 对应到java文件里，生成的是List</p>
+<p><strong>3 Message</strong><br>在proto文件里，数据的协议时以Message的形式表现的。<br><strong>4 Build</strong><br>生成具体的java类时，例如Person.java，同时会存在build方法。文档的意思是对于转化后的数据，具有唯一性，build提供了便利的方法来初始化这些数据。<br>这个先放着，以后回头好好研究这个协议。</p>
+<h2 id="Marshalling编解码"><a href="#Marshalling编解码" class="headerlink" title="Marshalling编解码"></a>Marshalling编解码</h2><p>由于Marshalling完全兼容java序列化。调用jboss的API对对象进行编解码。<br>首先要引入jboss-marshalling的jar包。下面的代码是marshalling编解码</p>
+<pre><code>public final class MarshallingCodeCFactory {
+
+    /**
+     * 创建Jboss Marshalling解码器MarshallingDecoder
+     * 
+     * @return
+     */
+    public static MarshallingDecoder buildMarshallingDecoder() {
+    final MarshallerFactory marshallerFactory = Marshalling
+        .getProvidedMarshallerFactory(&quot;serial&quot;);
+    final MarshallingConfiguration configuration = new MarshallingConfiguration();
+    configuration.setVersion(5);
+    UnmarshallerProvider provider = new DefaultUnmarshallerProvider(
+        marshallerFactory, configuration);
+    MarshallingDecoder decoder = new MarshallingDecoder(provider, 1024);
+    return decoder;
+    }
+
+    /**
+     * 创建Jboss Marshalling编码器MarshallingEncoder
+     * 
+     * @return
+     */
+    public static MarshallingEncoder buildMarshallingEncoder() {
+    final MarshallerFactory marshallerFactory = Marshalling
+        .getProvidedMarshallerFactory(&quot;serial&quot;);
+    final MarshallingConfiguration configuration = new MarshallingConfiguration();
+    configuration.setVersion(5);
+    MarshallerProvider provider = new DefaultMarshallerProvider(
+        marshallerFactory, configuration);
+    MarshallingEncoder encoder = new MarshallingEncoder(provider);
+    return encoder;
+    }
+}
+</code></pre><p>用法：还是以client为例</p>
+<pre><code>public class SubReqClient {
+
+    public void connect(int port, String host) throws Exception {
+    // 配置客户端NIO线程组
+    EventLoopGroup group = new NioEventLoopGroup();
+    try {
+        Bootstrap b = new Bootstrap();
+        b.group(group).channel(NioSocketChannel.class)
+            .option(ChannelOption.TCP_NODELAY, true)
+            .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
+            @Override
+            public void initChannel(SocketChannel ch)
+                throws Exception {
+                ch.pipeline().addLast(MarshallingCodeCFactory.buildMarshallingDecoder());
+                ch.pipeline().addLast(MarshallingCodeCFactory.buildMarshallingEncoder());
+                ch.pipeline().addLast(new SubReqClientHandler());
+            }
+            });
+
+        // 发起异步连接操作
+        ChannelFuture f = b.connect(host, port).sync();
+
+        // 当代客户端链路关闭
+        f.channel().closeFuture().sync();
+    } finally {
+        // 优雅退出，释放NIO线程组
+        group.shutdownGracefully();
+    }
+    }
+
+    /**
+     * @param args
+     * @throws Exception
+     */
+    public static void main(String[] args) throws Exception {
+    int port = 8080;
+    if (args != null &amp;&amp; args.length &gt; 0) {
+        try {
+        port = Integer.valueOf(args[0]);
+        } catch (NumberFormatException e) {
+        // 采用默认值
+        }
+    }
+    new SubReqClient().connect(port, &quot;127.0.0.1&quot;);
+    }
+}
+</code></pre><p>  还是在initChannel这个方法中添加</p>
+<pre><code>ch.pipeline().addLast(MarshallingCodeCFactory.buildMarshallingDecoder());
+ch.pipeline().addLast(MarshallingCodeCFactory.buildMarshallingEncoder());
+</code></pre><p>服务端和这个一样。<br>注意的是Marshalling支持拆包的处理。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>性能对比</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">框架</th>
+<th style="text-align:center">字节大小（byte）</th>
+<th style="text-align:center">序列化时间</th>
+<th style="text-align:center">反序列化时间</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">messagepack</td>
+<td style="text-align:center">12793</td>
+<td style="text-align:center">2313335</td>
+<td style="text-align:center">529458</td>
+</tr>
+<tr>
+<td style="text-align:center">protebuf</td>
+<td style="text-align:center">6590</td>
+<td style="text-align:center">941790</td>
+<td style="text-align:center">408571</td>
+</tr>
+<tr>
+<td style="text-align:center">json</td>
+<td style="text-align:center">17181</td>
+<td style="text-align:center">1338371</td>
+<td style="text-align:center">1776519</td>
+</tr>
+</tbody>
+</table>
+<p>讲了3中序列化框架和jdk自带的区别：<br><strong>MessagePack：</strong>在反序列化耗内存大小方面，msgpack远远超出json（1.6倍），由于内存是移动客户端场景下的重要指标，因此基本可以排除msgpack。<br><strong>protebuf：</strong>缺点是不支持半包处理，其余的都比megpack好<br><strong>marshalling：</strong>这个自带半包处理</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/netty/" rel="tag"># netty</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/13/netty粘包拆包/" rel="next" title="netty粘包拆包">
+                <i class="fa fa-chevron-left"></i> netty粘包拆包
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">lijia</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">9</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          <div class="links-of-author motion-element">
+            
+          </div>
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#java序列化"><span class="nav-number">1.</span> <span class="nav-text">java序列化</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#序列化是干什么的"><span class="nav-number">1.1.</span> <span class="nav-text">序列化是干什么的</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#java序列化之后码流太大"><span class="nav-number">2.</span> <span class="nav-text">java序列化之后码流太大</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#编码框架"><span class="nav-number">3.</span> <span class="nav-text">编码框架</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#MessagePack编解码"><span class="nav-number">3.1.</span> <span class="nav-text">MessagePack编解码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Protobuf编解码"><span class="nav-number">3.2.</span> <span class="nav-text">Protobuf编解码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Marshalling编解码"><span class="nav-number">3.3.</span> <span class="nav-text">Marshalling编解码</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lijia</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
