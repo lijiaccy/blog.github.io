@@ -90,7 +90,9 @@
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-8b9e0be6e0e7dc60.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-88bceb6f72be49a4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-77dab10d6a3e1828.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-10-18T03:05:55.520Z">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-6f0edcceba5e5771.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-a8b7d7e7a0bd5cf1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2017-10-18T08:53:34.051Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Netty之Http协议">
 <meta name="twitter:description" content="什么是HTTPHTTP是一个属于应用层的面向对象的协议，由于其简捷、快速的方式，适用于分布式超媒体信息系统。 HTTP协议的主要特点 支持客户/服务器模式。 简单快速：客户向服务器请求服务时，只需传送请求方法和路径。请求方法常用的有GET、HEAD、POST。每种方法规定了客户与服务器联系的类型不同。由于HTTP协议简单，使得HTTP服务器的程序规模小，因而通信速度很快。 灵活：HTTP允许传输任">
@@ -430,6 +432,283 @@ public class Test {
 <p><strong>5）服务器响应</strong><br>   服务器接到请求后，给予相应的响应信息，其格式为一个状态行，包括信息的协议版本号、一个成功或错误的代码，后边是MIME信息包括服务器信息、实体信息和可能的内容。<br>        实体消息是服务器向浏览器发送头信息后，它会发送一个空白行来表示头信息的发送到此为结束，接着，它就以Content-Type应答头信息所描述的格式发送用户所请求的实际数据</p>
 <p><strong>6）服务器关闭TCP连接</strong><br>     一般情况下，一旦Web服务器向浏览器发送了请求数据，它就要关闭TCP连接，然后如果浏览器或者服务器在其头信息加入了这行代码<br>    Connection:keep-alive<br>   TCP连接在发送后将仍然保持打开状态，于是，浏览器可以继续通过相同的连接发送请求。保持连接节省了为每个请求建立新连接所需的时间，还节约了网络带宽。</p>
 <p><strong>7） 服务器将响应信息传给客户端</strong><br>响应体中的内容可能是一个html页面，也可能是一张图片，通过输入流将其读出，并写回到显示器上。</p>
+<h1 id="用netty实现http的文件服务"><a href="#用netty实现http的文件服务" class="headerlink" title="用netty实现http的文件服务"></a>用netty实现http的文件服务</h1><h2 id="HttpServer启动类"><a href="#HttpServer启动类" class="headerlink" title="HttpServer启动类"></a>HttpServer启动类</h2><p>import io.netty.bootstrap.ServerBootstrap;<br>    import io.netty.channel.ChannelFuture;<br>    import io.netty.channel.ChannelInitializer;<br>    import io.netty.channel.EventLoopGroup;<br>    import io.netty.channel.nio.NioEventLoopGroup;<br>    import io.netty.channel.socket.SocketChannel;<br>    import io.netty.channel.socket.nio.NioServerSocketChannel;<br>    import io.netty.handler.codec.http.HttpObjectAggregator;<br>    import io.netty.handler.codec.http.HttpRequestDecoder;<br>    import io.netty.handler.codec.http.HttpResponseEncoder;<br>    import io.netty.handler.stream.ChunkedWriteHandler;</p>
+<pre><code>public class HttpServer {
+    private static final String DEFAULT_URL = &quot;/src/&quot;;
+
+    public static void main(String[] args) {
+        int port = 8888;
+        String url = DEFAULT_URL;
+        if(args.length &gt; 1){
+
+            url = args[1];
+        }
+        new HttpServer().connect(port, url);
+    }
+
+    private void connect(int port, final String url) {
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
+
+        try{
+            ServerBootstrap b = new ServerBootstrap();
+            b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+                    .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline().addLast(&quot;http-decoder&quot;, new HttpRequestDecoder());
+                            ch.pipeline().addLast(&quot;http-aggregator&quot;, new HttpObjectAggregator(65536));
+                            ch.pipeline().addLast(&quot;http-encoder&quot;, new HttpResponseEncoder());
+                            ch.pipeline().addLast(&quot;http-chunked&quot;, new ChunkedWriteHandler());
+                            ch.pipeline().addLast(&quot;fileServerHandler&quot;, new HttpFileServerHandler(url));
+                        }
+                    });
+
+            ChannelFuture f = b.bind(&quot;localhost&quot;,port).sync();
+            System.out.println(&quot;HTTP 文件服务器启动, 地址是： &quot; + &quot;http://localhost:&quot; + port + url);
+            f.channel().closeFuture().sync();
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally{
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+    }
+}
+</code></pre><h2 id="HttpFileServerHandler（业务处理）"><a href="#HttpFileServerHandler（业务处理）" class="headerlink" title="HttpFileServerHandler（业务处理）"></a>HttpFileServerHandler（业务处理）</h2><pre><code>import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.stream.ChunkedFile;
+import io.netty.util.CharsetUtil;
+
+import javax.activation.MimetypesFileTypeMap;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.RandomAccessFile;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.regex.Pattern;
+
+public class HttpFileServerHandler extends SimpleChannelInboundHandler&lt;FullHttpRequest&gt;{
+
+    private final String url;
+
+    public HttpFileServerHandler(String url) {
+        this.url = url;
+    }
+
+    @Override
+    protected void messageReceived(ChannelHandlerContext ctx,
+                                   FullHttpRequest request) throws Exception {
+        //对解码结果进行判断
+        if(!request.decoderResult().isSuccess())
+        {
+            sendError(ctx, HttpResponseStatus.BAD_REQUEST);
+            return;
+        }
+        //判断是不是GET方法
+        if(request.method() != HttpMethod.GET)
+        {
+            sendError(ctx, HttpResponseStatus.METHOD_NOT_ALLOWED);
+            return;
+        }
+
+        final String uri = request.uri();
+        //将uri解码
+        final String path = sanitizeUri(uri);
+        if(path == null)
+        {
+            sendError(ctx, HttpResponseStatus.FORBIDDEN);
+            return;
+        }
+        File file = new File(path);
+        //文件隐藏或者不存在
+        if(file.isHidden() || !file.exists())
+        {
+            sendError(ctx, HttpResponseStatus.NOT_FOUND);
+            return;
+        }
+       //是不是一个目录
+        if(file.isDirectory())
+        {
+            if(uri.endsWith(&quot;/&quot;))
+            {
+                sendListing(ctx, file);
+            }else{
+                sendRedirect(ctx, uri + &quot;/&quot;);
+            }
+            return;
+        }
+       //不是文件
+        if(!file.isFile())
+        {
+            sendError(ctx, HttpResponseStatus.FORBIDDEN);
+            return;
+        }
+
+        RandomAccessFile randomAccessFile = null;
+        try{
+            randomAccessFile = new RandomAccessFile(file, &quot;r&quot;);
+        }catch(FileNotFoundException fnfd){
+            sendError(ctx, HttpResponseStatus.NOT_FOUND);
+            return;
+        }
+        //获取文件长度
+        long fileLength = randomAccessFile.length();
+        HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+        HttpHeaderUtil.setContentLength(response, fileLength);
+        setContentTypeHeader(response, file);
+
+        if(HttpHeaderUtil.isKeepAlive(request)){
+            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+        }
+
+        ctx.write(response);
+        ChannelFuture sendFileFuture = null;
+        sendFileFuture = ctx.write(new ChunkedFile(randomAccessFile, 0, fileLength, 8192), ctx.newProgressivePromise());
+        sendFileFuture.addListener(new ChannelProgressiveFutureListener() {
+
+            @Override
+            public void operationComplete(ChannelProgressiveFuture future)
+                    throws Exception {
+                System.out.println(&quot;Transfer complete.&quot;);
+
+            }
+
+            @Override
+            public void operationProgressed(ChannelProgressiveFuture future,
+                                            long progress, long total) throws Exception {
+                if(total &lt; 0){
+                    System.err.println(&quot;Transfer progress: &quot; + progress);
+                }
+                else{
+
+                    System.err.println(&quot;Transfer progress: &quot; + progress + &quot;/&quot; + total);
+                }
+            }
+        });
+
+        ChannelFuture lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+        if(!HttpHeaderUtil.isKeepAlive(request)){
+
+            lastContentFuture.addListener(ChannelFutureListener.CLOSE);
+        }
+
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+            throws Exception {
+        cause.printStackTrace();
+        if(ctx.channel().isActive()){
+
+            sendError(ctx, HttpResponseStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private static final Pattern INSECURE_URI = Pattern.compile(&quot;.*[&lt;&gt;&amp;\&quot;].*&quot;);
+    private String sanitizeUri(String uri){
+        try{
+            uri = URLDecoder.decode(uri, &quot;UTF-8&quot;);
+        }catch(UnsupportedEncodingException e){
+            try{
+                uri = URLDecoder.decode(uri, &quot;ISO-8859-1&quot;);
+            }catch(UnsupportedEncodingException e1){
+                throw new Error();
+            }
+        }
+
+        if(!uri.startsWith(url)){
+
+            return null;
+        }
+        if(!uri.startsWith(&quot;/&quot;)){
+
+            return null;
+        }
+
+        uri = uri.replace(&apos;/&apos;, File.separatorChar);
+        if(uri.contains(File.separator + &apos;.&apos;) || uri.contains(&apos;.&apos; + File.separator) || uri.startsWith(&quot;.&quot;) || uri.endsWith(&quot;.&quot;)
+                || INSECURE_URI.matcher(uri).matches()){
+            return null;
+        }
+        return System.getProperty(&quot;user.dir&quot;) + File.separator + uri;
+    }
+
+    private static final Pattern ALLOWED_FILE_NAME = Pattern.compile(&quot;[A-Za-z0-9][-_A-Za-z0-9\\.]*&quot;);
+
+   //返回并显示
+    private static void sendListing(ChannelHandlerContext ctx, File dir){
+        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE, &quot;text/html;charset=UTF-8&quot;);
+
+        String dirPath = dir.getPath();
+        StringBuilder buf = new StringBuilder();
+
+        buf.append(&quot;&lt;!DOCTYPE html&gt;\r\n&quot;);
+        buf.append(&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;&quot;);
+        buf.append(dirPath);
+        buf.append(&quot;目录:&quot;);
+        buf.append(&quot;&lt;/title&gt;&lt;/head&gt;&lt;body&gt;\r\n&quot;);
+
+        buf.append(&quot;&lt;h3&gt;&quot;);
+        buf.append(dirPath).append(&quot; 目录：&quot;);
+        buf.append(&quot;&lt;/h3&gt;\r\n&quot;);
+        buf.append(&quot;&lt;ul&gt;&quot;);
+        buf.append(&quot;&lt;li&gt;链接：&lt;a href=\&quot; ../\&quot;)..&lt;/a&gt;&lt;/li&gt;\r\n&quot;);
+        for (File f : dir.listFiles()) {
+            if(f.isHidden() || !f.canRead()) {
+                continue;
+            }
+            String name = f.getName();
+            if (!ALLOWED_FILE_NAME.matcher(name).matches()) {
+                continue;
+            }
+
+            buf.append(&quot;&lt;li&gt;链接：&lt;a href=\&quot;&quot;);
+            buf.append(name);
+            buf.append(&quot;\&quot;&gt;&quot;);
+            buf.append(name);
+            buf.append(&quot;&lt;/a&gt;&lt;/li&gt;\r\n&quot;);
+        }
+
+        buf.append(&quot;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;\r\n&quot;);
+
+        ByteBuf buffer = Unpooled.copiedBuffer(buf,CharsetUtil.UTF_8);
+        response.content().writeBytes(buffer);
+        buffer.release();
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+    }
+
+
+    private static void sendRedirect(ChannelHandlerContext ctx, String newUri){
+        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.FOUND);
+        response.headers().set(HttpHeaderNames.LOCATION, newUri);
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+    }
+    private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status){
+        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, status,
+                Unpooled.copiedBuffer(&quot;Failure: &quot; + status.toString() + &quot;\r\n&quot;, CharsetUtil.UTF_8));
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE, &quot;text/html;charset=UTF-8&quot;);
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+    }
+    private static void setContentTypeHeader(HttpResponse response, File file){
+        MimetypesFileTypeMap mimetypesFileTypeMap = new MimetypesFileTypeMap();
+        response.headers().set(HttpHeaderNames.CONTENT_TYPE, mimetypesFileTypeMap.getContentType(file.getPath()));
+    }
+}
+</code></pre><p>然后启动HttpServer，控制台会出现</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-6f0edcceba5e5771.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""><br>然后输入 <a href="http://localhost:8888/src/" target="_blank" rel="external">http://localhost:8888/src/</a> ，会显示</p>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-a8b7d7e7a0bd5cf1.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
+<h1 id="看看上面的代码"><a href="#看看上面的代码" class="headerlink" title="看看上面的代码"></a>看看上面的代码</h1><p>在HttpServer中加入了</p>
+<pre><code>ch.pipeline().addLast(&quot;http-decoder&quot;, new HttpRequestDecoder());
+ch.pipeline().addLast(&quot;http-aggregator&quot;, new HttpObjectAggregator(65536));
+ch.pipeline().addLast(&quot;http-encoder&quot;, new HttpResponseEncoder());
+ch.pipeline().addLast(&quot;http-chunked&quot;, new ChunkedWriteHandler());
+ch.pipeline().addLast(&quot;fileServerHandler&quot;, new HttpFileServerHandler(url));
+</code></pre><p>加入了请求消息解码器。HttpObjectAggregator这个作用是将多个消息转化成单一的FullHttpRequest或者FullHttpResponse。业务处理放在HttpFileServerHandler中</p>
 
       
     </div>
@@ -602,7 +881,7 @@ public class Test {
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是HTTP"><span class="nav-number">1.</span> <span class="nav-text">什么是HTTP</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP协议的主要特点"><span class="nav-number">2.</span> <span class="nav-text">HTTP协议的主要特点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP的url组成"><span class="nav-number">3.</span> <span class="nav-text">HTTP的url组成</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP之请求消息Request"><span class="nav-number">4.</span> <span class="nav-text">HTTP之请求消息Request</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#请求行"><span class="nav-number">4.1.</span> <span class="nav-text">请求行</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP之响应消息Response"><span class="nav-number">5.</span> <span class="nav-text">HTTP之响应消息Response</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP工作原理"><span class="nav-number">6.</span> <span class="nav-text">HTTP工作原理</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#什么是HTTP"><span class="nav-number">1.</span> <span class="nav-text">什么是HTTP</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP协议的主要特点"><span class="nav-number">2.</span> <span class="nav-text">HTTP协议的主要特点</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP的url组成"><span class="nav-number">3.</span> <span class="nav-text">HTTP的url组成</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP之请求消息Request"><span class="nav-number">4.</span> <span class="nav-text">HTTP之请求消息Request</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#请求行"><span class="nav-number">4.1.</span> <span class="nav-text">请求行</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP之响应消息Response"><span class="nav-number">5.</span> <span class="nav-text">HTTP之响应消息Response</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#HTTP工作原理"><span class="nav-number">6.</span> <span class="nav-text">HTTP工作原理</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#用netty实现http的文件服务"><span class="nav-number">7.</span> <span class="nav-text">用netty实现http的文件服务</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#HttpServer启动类"><span class="nav-number">7.1.</span> <span class="nav-text">HttpServer启动类</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#HttpFileServerHandler（业务处理）"><span class="nav-number">7.2.</span> <span class="nav-text">HttpFileServerHandler（业务处理）</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#看看上面的代码"><span class="nav-number">8.</span> <span class="nav-text">看看上面的代码</span></a></li></ol></div>
             
 
           </div>
