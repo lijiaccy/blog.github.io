@@ -92,7 +92,7 @@
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-8edc088a21004388.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-e448002bfeff3702.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-c0cf484a24965752.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-10-19T08:11:08.541Z">
+<meta property="og:updated_time" content="2017-10-20T01:30:56.960Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="netty之WebSocket">
 <meta name="twitter:description" content="Http的弊端HTTP的生命周期通过Request来界定，也就是一个Request 一个Response。那么在HTTP1.0中，这次HTTP请求就结束了。在HTTP1.1中进行了改进，使得有一个keep-alive，也就是说，在一个HTTP连接中，可以发送多个Request，接收多个Response。但是请记住 Request 和 Response ， 在HTTP中永远是这样，也就是说一个req">
@@ -401,63 +401,71 @@ Sec-WebSocket-Version: 13
 <li>无头部信息，Cookie和身份验证</li>
 <li>无安全开销</li>
 <li>通过“ping/pong”帧保持链路激活</li>
-<li><p>度武器可以主动传递消息给客户端</p>
-<h1 id="用Netty实现WebSocket"><a href="#用Netty实现WebSocket" class="headerlink" title="用Netty实现WebSocket"></a>用Netty实现WebSocket</h1><p><strong>WebSocketServer</strong></p>
-<p>  import io.netty.bootstrap.ServerBootstrap;<br>  import io.netty.channel.Channel;<br>  import io.netty.channel.ChannelInitializer;<br>  import io.netty.channel.ChannelPipeline;<br>  import io.netty.channel.EventLoopGroup;<br>  import io.netty.channel.nio.NioEventLoopGroup;<br>  import io.netty.channel.socket.SocketChannel;<br>  import io.netty.channel.socket.nio.NioServerSocketChannel;<br>  import io.netty.handler.codec.http.HttpObjectAggregator;<br>  import io.netty.handler.codec.http.HttpServerCodec;<br>  import io.netty.handler.stream.ChunkedWriteHandler;</p>
-<p>  public class WebSocketServer {</p>
-<pre><code>public void run(int port) throws Exception {
-EventLoopGroup bossGroup = new NioEventLoopGroup();
-EventLoopGroup workerGroup = new NioEventLoopGroup();
-try {
-    ServerBootstrap b = new ServerBootstrap();
-    b.group(bossGroup, workerGroup)
-        .channel(NioServerSocketChannel.class)
-        .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
-
-        @Override
-        protected void initChannel(SocketChannel ch)
-            throws Exception {
-            ChannelPipeline pipeline = ch.pipeline();
-            pipeline.addLast(&quot;http-codec&quot;,
-                new HttpServerCodec());
-            pipeline.addLast(&quot;aggregator&quot;,
-                new HttpObjectAggregator(65536));
-            ch.pipeline().addLast(&quot;http-chunked&quot;,
-                new ChunkedWriteHandler());
-            pipeline.addLast(&quot;handler&quot;,
-                new WebSocketServerHandler());
-        }
-        });
-
-    Channel ch = b.bind(port).sync().channel();
-    System.out.println(&quot;Web socket server started at port &quot; + port
-        + &apos;.&apos;);
-    System.out
-        .println(&quot;Open your browser and navigate to http://localhost:&quot;
-            + port + &apos;/&apos;);
-
-    ch.closeFuture().sync();
-} finally {
-    bossGroup.shutdownGracefully();
-    workerGroup.shutdownGracefully();
-}
-}
-
-public static void main(String[] args) throws Exception {
-int port = 8080;
-if (args.length &gt; 0) {
+<li>度武器可以主动传递消息给客户端<h1 id="用Netty实现WebSocket"><a href="#用Netty实现WebSocket" class="headerlink" title="用Netty实现WebSocket"></a>用Netty实现WebSocket</h1><strong>WebSocketServer</strong></li>
+</ul>
+<pre><code>import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.stream.ChunkedWriteHandler;
+public class WebSocketServer {
+    public void run(int port) throws Exception {
+    EventLoopGroup bossGroup = new NioEventLoopGroup();
+    EventLoopGroup workerGroup = new NioEventLoopGroup();
     try {
-    port = Integer.parseInt(args[0]);
-    } catch (NumberFormatException e) {
-    e.printStackTrace();
+        ServerBootstrap b = new ServerBootstrap();
+        b.group(bossGroup, workerGroup)
+            .channel(NioServerSocketChannel.class)
+            .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
+
+            @Override
+            protected void initChannel(SocketChannel ch)
+                throws Exception {
+                ChannelPipeline pipeline = ch.pipeline();
+                pipeline.addLast(&quot;http-codec&quot;,
+                    new HttpServerCodec());
+                pipeline.addLast(&quot;aggregator&quot;,
+                    new HttpObjectAggregator(65536));
+                ch.pipeline().addLast(&quot;http-chunked&quot;,
+                    new ChunkedWriteHandler());
+                pipeline.addLast(&quot;handler&quot;,
+                    new WebSocketServerHandler());
+            }
+            });
+
+        Channel ch = b.bind(port).sync().channel();
+        System.out.println(&quot;Web socket server started at port &quot; + port
+            + &apos;.&apos;);
+        System.out
+            .println(&quot;Open your browser and navigate to http://localhost:&quot;
+                + port + &apos;/&apos;);
+
+        ch.closeFuture().sync();
+    } finally {
+        bossGroup.shutdownGracefully();
+        workerGroup.shutdownGracefully();
+    }
+    }
+
+    public static void main(String[] args) throws Exception {
+    int port = 8080;
+    if (args.length &gt; 0) {
+        try {
+        port = Integer.parseInt(args[0]);
+        } catch (NumberFormatException e) {
+        e.printStackTrace();
+        }
+    }
+    new WebSocketServer().run(port);
     }
 }
-new WebSocketServer().run(port);
-}
-</code></pre><p>  }</p>
-</li>
-</ul>
-<p><strong>WebSocketServerHandler </strong></p>
+</code></pre><p><strong>WebSocketServerHandler </strong></p>
 <pre><code>import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;

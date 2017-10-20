@@ -99,7 +99,7 @@
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-ea4756fefba91a92.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-6d3ae3ded964318f.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-9ef656ae936cd937.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-10-13T08:53:46.352Z">
+<meta property="og:updated_time" content="2017-10-20T01:28:34.750Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="netty粘包拆包">
 <meta name="twitter:description" content="什么是TCP粘包/拆包首先了解什么是长连接和短连接长连接： Client方与Server方先建立通讯连接，连接建立后不断开， 然后再进行报文发送和接收。短连接：Client方与Server每进行一次报文收发交易时才进行通讯连接，交易完毕后立即断开连接。 什么时候会出现粘包问题 如果用tcp每次发送数据，就与对方建立连接，然后双方发送完一段数据后，就关闭连接，这样就不会出现粘包问题（因为只有一种包结">
@@ -390,8 +390,7 @@
 <li>c、第一次获取D1和部分D2数据，第二次获取D2剩余内容，这就是拆包</li>
 <li><p>还有一种可能，就是多次拆包，即服务端接收划窗小，而D1，D2又比较大</p>
 <h1 id="粘包的解决策略"><a href="#粘包的解决策略" class="headerlink" title="粘包的解决策略"></a>粘包的解决策略</h1><p>1、发送端给每个数据包添加包首部，首部中应该至少包含数据包的长度，这样接收端在接收到数据后，通过读取包首部的长度字段，便知道每一个数据包的实际长度了。<br>2、发送端将每个数据包封装为固定长度（不够的可以通过补0填充），这样接收端每次从接收缓冲区中读取固定长度的数据就自然而然的把每个数据包拆分开来。<br>3、可以在数据包之间设置边界，如添加特殊符号，这样，接收端通过这个边界就可以将不同的数据包拆分开。<br>4、其他<br>首先模拟去看着这个问题<br><strong>TimeServer</strong></p>
-<p>  import io.netty.bootstrap.ServerBootstrap;<br>  import io.netty.channel.ChannelFuture;<br>  import io.netty.channel.ChannelInitializer;<br>  import io.netty.channel.ChannelOption;<br>  import io.netty.channel.EventLoopGroup;<br>  import io.netty.channel.nio.NioEventLoopGroup;<br>  import io.netty.channel.socket.SocketChannel;<br>  import io.netty.channel.socket.nio.NioServerSocketChannel;</p>
-<p>  public class TimeServer {</p>
+<p>  import io.netty.bootstrap.ServerBootstrap;<br>  import io.netty.channel.ChannelFuture;<br>  import io.netty.channel.ChannelInitializer;<br>  import io.netty.channel.ChannelOption;<br>  import io.netty.channel.EventLoopGroup;<br>  import io.netty.channel.nio.NioEventLoopGroup;<br>  import io.netty.channel.socket.SocketChannel;<br>  import io.netty.channel.socket.nio.NioServerSocketChannel;<br>  public class TimeServer {</p>
 <pre><code>public void bind(int port) throws Exception {
 // 配置服务端的NIO线程组
 EventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -438,136 +437,122 @@ if (args != null &amp;&amp; args.length &gt; 0) {
 new TimeServer().bind(port);
 }
 </code></pre><p>  }<br><strong>TimeServerHandler</strong></p>
-<p>  import io.netty.buffer.ByteBuf;<br>  import io.netty.buffer.Unpooled;<br>  import io.netty.channel.ChannelHandlerAdapter;<br>  import io.netty.channel.ChannelHandlerContext;</p>
+<p>  import io.netty.buffer.ByteBuf;<br>  import io.netty.buffer.Unpooled;<br>  import io.netty.channel.ChannelHandlerAdapter;<br>  import io.netty.channel.ChannelHandlerContext;<br>  public class TimeServerHandler extends ChannelHandlerAdapter {</p>
+<pre><code>private int counter;
+
+@Override
+public void channelRead(ChannelHandlerContext ctx, Object msg)
+    throws Exception {
+ByteBuf buf = (ByteBuf) msg;
+byte[] req = new byte[buf.readableBytes()];
+buf.readBytes(req);
+String body = new String(req, &quot;UTF-8&quot;).substring(0, req.length
+    - System.getProperty(&quot;line.separator&quot;).length());
+System.out.println(&quot;The time server receive order : &quot; + body
+    + &quot; ; the counter is : &quot; + ++counter);
+String currentTime = &quot;QUERY TIME ORDER&quot;.equalsIgnoreCase(body) ? new java.util.Date(
+    System.currentTimeMillis()).toString() : &quot;BAD ORDER&quot;;
+currentTime = currentTime + System.getProperty(&quot;line.separator&quot;);
+ByteBuf resp = Unpooled.copiedBuffer(currentTime.getBytes());
+ctx.writeAndFlush(resp);
+}
+
+@Override
+public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+ctx.close();
+}
+</code></pre><p>  }<br><strong>TimeClient</strong></p>
+<p>  import io.netty.bootstrap.Bootstrap;<br>  import io.netty.channel.ChannelFuture;<br>  import io.netty.channel.ChannelInitializer;<br>  import io.netty.channel.ChannelOption;<br>  import io.netty.channel.EventLoopGroup;<br>  import io.netty.channel.nio.NioEventLoopGroup;<br>  import io.netty.channel.socket.SocketChannel;<br>  import io.netty.channel.socket.nio.NioSocketChannel;<br>  public class TimeClient {</p>
+<pre><code>public void connect(int port, String host) throws Exception {
+// 配置客户端NIO线程组
+EventLoopGroup group = new NioEventLoopGroup();
+try {
+    Bootstrap b = new Bootstrap();
+    b.group(group).channel(NioSocketChannel.class)
+        .option(ChannelOption.TCP_NODELAY, true)
+        .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
+        @Override
+        public void initChannel(SocketChannel ch)
+            throws Exception {
+
+            ch.pipeline().addLast(new TimeClientHandler());
+        }
+        });
+
+    // 发起异步连接操作
+    ChannelFuture f = b.connect(host, port).sync();
+
+    // 当代客户端链路关闭
+    f.channel().closeFuture().sync();
+} finally {
+    // 优雅退出，释放NIO线程组
+    group.shutdownGracefully();
+}
+}
+
+/**
+ * @param args
+ * @throws Exception
+ */
+public static void main(String[] args) throws Exception {
+int port = 8080;
+if (args != null &amp;&amp; args.length &gt; 0) {
+    try {
+    port = Integer.valueOf(args[0]);
+    } catch (NumberFormatException e) {
+    // 采用默认值
+    }
+}
+new TimeClient().connect(port, &quot;127.0.0.1&quot;);
+}
+</code></pre><p>  }<br><strong>TimeClientHandler</strong></p>
+<p>  import io.netty.buffer.ByteBuf;<br>  import io.netty.buffer.Unpooled;<br>  import io.netty.channel.ChannelHandlerAdapter;<br>  import io.netty.channel.ChannelHandlerContext;<br>  import java.util.logging.Logger;<br>  public class TimeClientHandler extends ChannelHandlerAdapter {</p>
+<pre><code>private static final Logger logger = Logger
+    .getLogger(TimeClientHandler.class.getName());
+
+private int counter;
+
+private byte[] req;
+
+/**
+ * Creates a client-side handler.
+ */
+public TimeClientHandler() {
+req = (&quot;QUERY TIME ORDER&quot; + System.getProperty(&quot;line.separator&quot;))
+    .getBytes();
+}
+
+@Override
+public void channelActive(ChannelHandlerContext ctx) {
+ByteBuf message = null;
+for (int i = 0; i &lt; 100; i++) {
+    message = Unpooled.buffer(req.length);
+    message.writeBytes(req);
+    ctx.writeAndFlush(message);
+}
+}
+
+@Override
+public void channelRead(ChannelHandlerContext ctx, Object msg)
+    throws Exception {
+ByteBuf buf = (ByteBuf) msg;
+byte[] req = new byte[buf.readableBytes()];
+buf.readBytes(req);
+String body = new String(req, &quot;UTF-8&quot;);
+System.out.println(&quot;Now is : &quot; + body + &quot; ; the counter is : &quot;
+    + ++counter);
+}
+
+@Override
+public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+// 释放资源
+logger.warning(&quot;Unexpected exception from downstream : &quot;
+    + cause.getMessage());
+ctx.close();
+}
+</code></pre><p>  }<br>执行结果：</p>
 </li>
 </ul>
-<pre><code>public class TimeServerHandler extends ChannelHandlerAdapter {
-
-    private int counter;
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg)
-        throws Exception {
-    ByteBuf buf = (ByteBuf) msg;
-    byte[] req = new byte[buf.readableBytes()];
-    buf.readBytes(req);
-    String body = new String(req, &quot;UTF-8&quot;).substring(0, req.length
-        - System.getProperty(&quot;line.separator&quot;).length());
-    System.out.println(&quot;The time server receive order : &quot; + body
-        + &quot; ; the counter is : &quot; + ++counter);
-    String currentTime = &quot;QUERY TIME ORDER&quot;.equalsIgnoreCase(body) ? new java.util.Date(
-        System.currentTimeMillis()).toString() : &quot;BAD ORDER&quot;;
-    currentTime = currentTime + System.getProperty(&quot;line.separator&quot;);
-    ByteBuf resp = Unpooled.copiedBuffer(currentTime.getBytes());
-    ctx.writeAndFlush(resp);
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    ctx.close();
-    }
-}
-</code></pre><p><strong>TimeClient</strong><br>    import io.netty.bootstrap.Bootstrap;<br>    import io.netty.channel.ChannelFuture;<br>    import io.netty.channel.ChannelInitializer;<br>    import io.netty.channel.ChannelOption;<br>    import io.netty.channel.EventLoopGroup;<br>    import io.netty.channel.nio.NioEventLoopGroup;<br>    import io.netty.channel.socket.SocketChannel;<br>    import io.netty.channel.socket.nio.NioSocketChannel;</p>
-<pre><code>public class TimeClient {
-
-    public void connect(int port, String host) throws Exception {
-    // 配置客户端NIO线程组
-    EventLoopGroup group = new NioEventLoopGroup();
-    try {
-        Bootstrap b = new Bootstrap();
-        b.group(group).channel(NioSocketChannel.class)
-            .option(ChannelOption.TCP_NODELAY, true)
-            .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
-            @Override
-            public void initChannel(SocketChannel ch)
-                throws Exception {
-
-                ch.pipeline().addLast(new TimeClientHandler());
-            }
-            });
-
-        // 发起异步连接操作
-        ChannelFuture f = b.connect(host, port).sync();
-
-        // 当代客户端链路关闭
-        f.channel().closeFuture().sync();
-    } finally {
-        // 优雅退出，释放NIO线程组
-        group.shutdownGracefully();
-    }
-    }
-
-    /**
-     * @param args
-     * @throws Exception
-     */
-    public static void main(String[] args) throws Exception {
-    int port = 8080;
-    if (args != null &amp;&amp; args.length &gt; 0) {
-        try {
-        port = Integer.valueOf(args[0]);
-        } catch (NumberFormatException e) {
-        // 采用默认值
-        }
-    }
-    new TimeClient().connect(port, &quot;127.0.0.1&quot;);
-    }
-}
-</code></pre><p><strong>TimeClientHandler</strong></p>
-<pre><code>import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerAdapter;
-import io.netty.channel.ChannelHandlerContext;
-
-import java.util.logging.Logger;
-
-public class TimeClientHandler extends ChannelHandlerAdapter {
-
-    private static final Logger logger = Logger
-        .getLogger(TimeClientHandler.class.getName());
-
-    private int counter;
-
-    private byte[] req;
-
-    /**
-     * Creates a client-side handler.
-     */
-    public TimeClientHandler() {
-    req = (&quot;QUERY TIME ORDER&quot; + System.getProperty(&quot;line.separator&quot;))
-        .getBytes();
-    }
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) {
-    ByteBuf message = null;
-    for (int i = 0; i &lt; 100; i++) {
-        message = Unpooled.buffer(req.length);
-        message.writeBytes(req);
-        ctx.writeAndFlush(message);
-    }
-    }
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg)
-        throws Exception {
-    ByteBuf buf = (ByteBuf) msg;
-    byte[] req = new byte[buf.readableBytes()];
-    buf.readBytes(req);
-    String body = new String(req, &quot;UTF-8&quot;);
-    System.out.println(&quot;Now is : &quot; + body + &quot; ; the counter is : &quot;
-        + ++counter);
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-    // 释放资源
-    logger.warning(&quot;Unexpected exception from downstream : &quot;
-        + cause.getMessage());
-    ctx.close();
-    }
-}
-</code></pre><p>执行结果：</p>
 <p><img src="http://upload-images.jianshu.io/upload_images/4714843-f45c7b5c6ed02d5b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="server"></p>
 <p><img src="http://upload-images.jianshu.io/upload_images/4714843-f233247e9379d709.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="client"><br>服务端收到2条消息，理论上是100条，发生了粘包。客户端也只收到了2条消息</p>
 <h1 id="Netty如何去处理这个问题呢"><a href="#Netty如何去处理这个问题呢" class="headerlink" title="Netty如何去处理这个问题呢"></a>Netty如何去处理这个问题呢</h1><h2 id="LineBasedFrameDecoder"><a href="#LineBasedFrameDecoder" class="headerlink" title="LineBasedFrameDecoder"></a>LineBasedFrameDecoder</h2><p>在上面代码的TimeServer和ClientServer的initChannel方法中，分别加上</p>

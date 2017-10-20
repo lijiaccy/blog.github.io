@@ -89,7 +89,7 @@
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-4da6792cfd19b1a4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-4c742b0fefbca6c3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-10-17T09:11:42.739Z">
+<meta property="og:updated_time" content="2017-10-20T01:29:17.590Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="netty编解码技术">
 <meta name="twitter:description" content="java序列化序列化是干什么的为了保存在内存中的各种对象的状态（也就是实例变量，不是方法），并且可以把保存的对象状态再读出来。虽然你可以用你自己的各种各样的方法来保存object states，但是Java给你提供一种应该比你自己好的保存对象状态的机制，那就是序列化。 java序列化之后码流太大首先通过一个列子来看看 import java.io.ByteArrayOutputStream; im">
@@ -491,32 +491,35 @@ public class UserInfo implements Serializable {
 <ul>
 <li>编解码高效，性能高</li>
 <li>序列化之后的码流小</li>
-<li><p>支持跨语言<br>简单使用：<br>POJO:<strong>需要加上@Message</strong></p>
-<p>  import org.msgpack.annotation.Message;</p>
-<p>  @Message<br>  public class Student {</p>
-<pre><code>private int id;
+<li>支持跨语言<br>简单使用：<br>POJO:<strong>需要加上@Message</strong></li>
+</ul>
+<pre><code>import org.msgpack.annotation.Message;
+@Message
+public class Student {
+    private int id;
 
-private String name;
+    private String name;
 
-public int getId() {
-    return id;
-}
-public void setId(int id) {
-    this.id = id;
-}
+    public int getId() {
+        return id;
+    }
+    public void setId(int id) {
+        this.id = id;
+    }
 
-public String getName() {
-    return name;
-}
+    public String getName() {
+        return name;
+    }
 
-public void setName(String name) {
-    this.name = name;
+    public void setName(String name) {
+        this.name = name;
+    }
+    @Override
+    public String toString() {
+        return &quot;Student [id=&quot; + id + &quot;, name=&quot; + name + &quot;]&quot;;
+    }
 }
-@Override
-public String toString() {
-    return &quot;Student [id=&quot; + id + &quot;, name=&quot; + name + &quot;]&quot;;
-}
-</code></pre><p>  }<br>测试类：</p>
+</code></pre><p>测试类：</p>
 <pre><code>Student student = new Student();
   student.setId(1);
   student.setName(&quot;lijia&quot;);
@@ -528,9 +531,7 @@ public String toString() {
   } catch (IOException e) {
       e.printStackTrace();
   }
-</code></pre><p>运行结果：<br><img src="http://upload-images.jianshu.io/upload_images/4714843-4c742b0fefbca6c3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
-</li>
-</ul>
+</code></pre><p> 运行结果：<br><img src="http://upload-images.jianshu.io/upload_images/4714843-4c742b0fefbca6c3.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
 <h2 id="Protobuf编解码"><a href="#Protobuf编解码" class="headerlink" title="Protobuf编解码"></a>Protobuf编解码</h2><p>这个我弄了一天，找到一个windows版本的，但是在电脑上运行不了。大致了解一下吧<br><strong>1 .proto文件</strong><br>相当于确定数据协议，数据结构中存在哪些数据，数据类型是怎么样<br><strong>2 modifiers</strong></p>
 <p>2-1 required 不可以增加或删除的字段，必须初始化</p>
 <p>2-2 optional 可选字段，可删除，可以不初始化</p>

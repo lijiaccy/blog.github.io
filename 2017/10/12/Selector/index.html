@@ -88,7 +88,7 @@
 <meta property="og:description" content="选择器的概念Selector是Java NIO中的一个组件，用于检查一个或多个NIO Channel的状态是否处于可读、可写。如此可以实现单线程管理多个channels,也就是可以管理多个网络链接。 为什么要用选择器用单线程处理多个channels的好处是我需要更少的线程来处理channel。实际上，你甚至可以用一个线程来处理所有的channels。从操作系统的角度来看，切换线程开销是比较昂贵的，">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-3b67c1c21c72772e.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-10-13T01:40:09.794Z">
+<meta property="og:updated_time" content="2017-10-20T01:18:14.389Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Selector">
 <meta name="twitter:description" content="选择器的概念Selector是Java NIO中的一个组件，用于检查一个或多个NIO Channel的状态是否处于可读、可写。如此可以实现单线程管理多个channels,也就是可以管理多个网络链接。 为什么要用选择器用单线程处理多个channels的好处是我需要更少的线程来处理channel。实际上，你甚至可以用一个线程来处理所有的channels。从操作系统的角度来看，切换线程开销是比较昂贵的，">
@@ -737,8 +737,9 @@ private void doWrite(SocketChannel sc) throws IOException {
     if (!writeBuffer.hasRemaining())
         System.out.println(&quot;Send order 2 server succeed.&quot;);
 }
-</code></pre><p>}</p>
 
+}
+</code></pre>
       
     </div>
     

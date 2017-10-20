@@ -93,7 +93,7 @@
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-c6489894753c8f50.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-9455eb44265e31aa.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-e7552c5a390628fc.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-10-13T01:42:06.434Z">
+<meta property="og:updated_time" content="2017-10-20T01:27:30.737Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="netty入门">
 <meta name="twitter:description" content="什么是nettyNetty 是一个基于 JAVA NIO 类库的异步通信框架，它的架构特点是：异步非阻塞、基于事件驱动、高性能、高可靠性和高可定制性。 Netty 能够做什么 开发异步、非阻塞的 TCP 网络应用程序；  开发异步、非阻塞的 UDP 网络应用程序；  开发异步文件传输应用程序；  开发异步 HTTP 服务端和客户端应用程序；  提供对多种编解码框架的集成，包括谷歌的 Protobu">
@@ -436,9 +436,16 @@
     &lt;version&gt;5.0.0.Alpha1&lt;/version&gt;
 &lt;/dependency&gt;
 </code></pre><p><strong>服务端</strong><br><strong>TimeServer：</strong></p>
-<p>import io.netty.bootstrap.ServerBootstrap;<br>import io.netty.channel.ChannelFuture;<br>import io.netty.channel.ChannelInitializer;<br>import io.netty.channel.ChannelOption;<br>import io.netty.channel.EventLoopGroup;<br>import io.netty.channel.nio.NioEventLoopGroup;<br>import io.netty.channel.socket.SocketChannel;<br>import io.netty.channel.socket.nio.NioServerSocketChannel;</p>
-<p>public class TimeServer {</p>
-<pre><code>public void bind(int port) throws Exception {
+<pre><code>import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+public class TimeServer {
+public void bind(int port) throws Exception {
 // 配置服务端的NIO两个线程组，其实就是Reactor线程组。
     //创建两个的原因就是一个是服务器接收客户端的连接，一个是进行SocketChannel网络读写
 EventLoopGroup bossGroup = new NioEventLoopGroup();
@@ -537,9 +544,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-
 public class TimeClient {
-
     public void connect(int port, String host) throws Exception {
     // 配置客户端NIO线程组，这个和server一样
     EventLoopGroup group = new NioEventLoopGroup();
