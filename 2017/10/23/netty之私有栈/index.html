@@ -68,7 +68,7 @@
 
 
 
-  <meta name="keywords" content="Hexo, NexT" />
+  <meta name="keywords" content="netty," />
 
 
 
@@ -79,17 +79,20 @@
 
 
 
-<meta name="description" content="开篇寄语一直想自己搭建一个博客，但是身为资深懒人，什么都不愿意去做，正好趁着闲时抓紧时间去做一下，不然肯定又拖了。主要分享一些工作中遇到的问题和一些面试问题。因为我本人是学java的，所以一般是java的代码。">
+<meta name="description" content="协议栈功能设计Netty协议栈用于内部各模块间的通信，基于TCP/IP协议栈。 协议栈功能描述 基于Netty的NIO通信框架，提供高性能的异步通信能力 提供消息的编解码框架，可以实现POJO的序列化和反序列化 提供基于IP地址的白名单接入认证机制 链路的有效校验机制 链路的断连机制通信模型  （1） Netty协议栈客户端发送握手请求消息，携带节点ID等有效身份认证信息（2） Netty协议栈服">
+<meta name="keywords" content="netty">
 <meta property="og:type" content="article">
-<meta property="og:title" content="开篇">
-<meta property="og:url" content="http://yoursite.com/2017/09/27/test/index.html">
+<meta property="og:title" content="netty之私有栈">
+<meta property="og:url" content="http://yoursite.com/2017/10/23/netty之私有栈/index.html">
 <meta property="og:site_name" content="LiJia&#39;s Dream">
-<meta property="og:description" content="开篇寄语一直想自己搭建一个博客，但是身为资深懒人，什么都不愿意去做，正好趁着闲时抓紧时间去做一下，不然肯定又拖了。主要分享一些工作中遇到的问题和一些面试问题。因为我本人是学java的，所以一般是java的代码。">
+<meta property="og:description" content="协议栈功能设计Netty协议栈用于内部各模块间的通信，基于TCP/IP协议栈。 协议栈功能描述 基于Netty的NIO通信框架，提供高性能的异步通信能力 提供消息的编解码框架，可以实现POJO的序列化和反序列化 提供基于IP地址的白名单接入认证机制 链路的有效校验机制 链路的断连机制通信模型  （1） Netty协议栈客户端发送握手请求消息，携带节点ID等有效身份认证信息（2） Netty协议栈服">
 <meta property="og:locale" content="zh-Hans">
-<meta property="og:updated_time" content="2017-10-09T08:39:56.897Z">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-9724679d4d428fe8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2017-10-23T09:10:07.552Z">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="开篇">
-<meta name="twitter:description" content="开篇寄语一直想自己搭建一个博客，但是身为资深懒人，什么都不愿意去做，正好趁着闲时抓紧时间去做一下，不然肯定又拖了。主要分享一些工作中遇到的问题和一些面试问题。因为我本人是学java的，所以一般是java的代码。">
+<meta name="twitter:title" content="netty之私有栈">
+<meta name="twitter:description" content="协议栈功能设计Netty协议栈用于内部各模块间的通信，基于TCP/IP协议栈。 协议栈功能描述 基于Netty的NIO通信框架，提供高性能的异步通信能力 提供消息的编解码框架，可以实现POJO的序列化和反序列化 提供基于IP地址的白名单接入认证机制 链路的有效校验机制 链路的断连机制通信模型  （1） Netty协议栈客户端发送握手请求消息，携带节点ID等有效身份认证信息（2） Netty协议栈服">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4714843-9724679d4d428fe8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 
 
 
@@ -119,13 +122,13 @@
 
 
 
-  <link rel="canonical" href="http://yoursite.com/2017/09/27/test/"/>
+  <link rel="canonical" href="http://yoursite.com/2017/10/23/netty之私有栈/"/>
 
 
 
 
 
-  <title>开篇 | LiJia's Dream</title>
+  <title>netty之私有栈 | LiJia's Dream</title>
   
 
 
@@ -272,7 +275,7 @@
   
   
   <div class="post-block">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/09/27/test/">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/10/23/netty之私有栈/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
       <meta itemprop="name" content="lijia">
@@ -289,7 +292,7 @@
 
         
         
-          <h1 class="post-title" itemprop="name headline">开篇</h1>
+          <h1 class="post-title" itemprop="name headline">netty之私有栈</h1>
         
 
         <div class="post-meta">
@@ -301,8 +304,8 @@
               
                 <span class="post-meta-item-text">发表于</span>
               
-              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-09-27T15:47:11+08:00">
-                2017-09-27
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-10-23T17:09:44+08:00">
+                2017-10-23
               </time>
             
 
@@ -324,8 +327,8 @@
               
               
                 <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/随笔/" itemprop="url" rel="index">
-                    <span itemprop="name">随笔</span>
+                  <a href="/categories/netty/" itemprop="url" rel="index">
+                    <span itemprop="name">netty</span>
                   </a>
                 </span>
 
@@ -361,7 +364,26 @@
       
 
       
-        <h2 id="开篇寄语"><a href="#开篇寄语" class="headerlink" title="开篇寄语"></a>开篇寄语</h2><p>一直想自己搭建一个博客，但是身为资深懒人，什么都不愿意去做，正好趁着闲时抓紧时间去做一下，不然肯定又拖了。<br>主要分享一些工作中遇到的问题和一些面试问题。<br>因为我本人是学java的，所以一般是java的代码。</p>
+        <h1 id="协议栈功能设计"><a href="#协议栈功能设计" class="headerlink" title="协议栈功能设计"></a>协议栈功能设计</h1><p>Netty协议栈用于内部各模块间的通信，基于TCP/IP协议栈。</p>
+<h2 id="协议栈功能描述"><a href="#协议栈功能描述" class="headerlink" title="协议栈功能描述"></a>协议栈功能描述</h2><ul>
+<li>基于Netty的NIO通信框架，提供高性能的异步通信能力</li>
+<li>提供消息的编解码框架，可以实现POJO的序列化和反序列化</li>
+<li>提供基于IP地址的白名单接入认证机制</li>
+<li>链路的有效校验机制</li>
+<li>链路的断连机制<h2 id="通信模型"><a href="#通信模型" class="headerlink" title="通信模型"></a>通信模型</h2></li>
+</ul>
+<p><img src="http://upload-images.jianshu.io/upload_images/4714843-9724679d4d428fe8.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""><br>（1） Netty协议栈客户端发送握手请求消息，携带节点ID等有效身份认证信息<br>（2） Netty协议栈服务端对握手请求消息进行合法性验证。校验通过后，返回登陆成功的应答信息。<br>（3） 链路建立成功之后，客户端发送业务消息。<br>（4） 链路成功之后，服务端发送心跳消息。<br>（5） 链路成功之后，客户端发送心跳消息。<br>（6） 链路建立成功之后，服务端发送业务消息。<br>（7） 服务端退出时，服务器关闭连接，客户端感知对方关闭，被动关闭客户端。<br><strong>注意：</strong>Netty协议通信双方链路建立成功之后，双发可以进行全双工通信，无论是客户端还是服务端，都可以主动发送消息给对方。双方之间的心跳采用Ping-Pong机制，当链路空闲时，客户端主动发送ping消息给服务端，服务端收到后发送Pong返回给客户端，如果客户端连续发送N条ping消息都没有收到服务端返回的pong消息，说明链路已经挂死或者对方处于异常，客户端应主动关闭连接，间隔周期T后发起重连操作，直到重连成功。</p>
+<h2 id="消息的定义"><a href="#消息的定义" class="headerlink" title="消息的定义"></a>消息的定义</h2><p>Netty协议栈消息定义包含了两部分：<strong>消息头和消息体</strong></p>
+<h2 id="Netty协议支持的字段类型"><a href="#Netty协议支持的字段类型" class="headerlink" title="Netty协议支持的字段类型"></a>Netty协议支持的字段类型</h2><p>java所有的基本类型还有String，map，set，array，list</p>
+<h2 id="Netty协议的编解码"><a href="#Netty协议的编解码" class="headerlink" title="Netty协议的编解码"></a>Netty协议的编解码</h2><p>使用同一的编解码类型</p>
+<h2 id="链路的建立"><a href="#链路的建立" class="headerlink" title="链路的建立"></a>链路的建立</h2><p>Netty协议栈是支持服务端和客户端的，但是对于使用Netty协议栈的应用程序中，不需要刻意的去区别服务端和客户端。在分布式组网环境中，一个节点可能是服务端，也可能是客户端。<br>Netty协议栈对客户端的说明如下，如果A节点需要调用B节点的服务，而A节点和B节点还没有建立物理链路，则由调用方主动发起连接。调用方称为客户端，被调用方称为服务端。<br><strong>注意链路建立的安全机制</strong></p>
+<h2 id="链路的关闭"><a href="#链路的关闭" class="headerlink" title="链路的关闭"></a>链路的关闭</h2><p>由于采用长连接通信，在正常业务运行期间，双方通过心跳和业务消息维护链路，任何一方不需要主动关闭连接。在以下情况下，需要客户端和服务端关闭连接。</p>
+<ul>
+<li>当双方关机或者重启时，会主动关闭链路，另一方读取到操作系统的通知信号，得知双方的REST链路，需要关闭连接，释放自身的 句柄等资源。由于采用TCP全双工通信，通信双方都需要关闭连接，释放资源。</li>
+<li>消息读写过程中，发生了I/0异常，需要主动关闭连接</li>
+<li>心跳超时，需要主动关闭连接</li>
+<li>发生编码异常等不可恢复错误时，需要主动关闭连接<h2 id="可靠性设计"><a href="#可靠性设计" class="headerlink" title="可靠性设计"></a>可靠性设计</h2>1、心跳机制<br>（1）当网络处于空闲状态达到T时，客户端主动发送Ping心跳消息给服务端。<br>（2）如果在下一个周期T到来时客户端没有收到对方发送的Pong心跳应答消息或者读取到服务端发送的其他业务消息，则心跳失败计数器加1<br>（3）每当客户端接收到服务的业务消息或者Pong应答消息，将心跳失败计数器清零；<br>（4）服务端网络空闲状态时间达到T后，服务端将心跳失败计数器加1；只要连接到客户端发送的Ping消息或者其他业务消息，计数器清零；<br>（5）服务端连续N次没有接收到客户端的Ping消息或者其他业务消息，则关闭链路，释放资源，等待客户端重连。<br>2、重连机制<br>要注意的只有一点，不是失败后立即重连，需要确保句柄资源释放，如果重连失败，必须打印异常堆栈信息。<br>3、重复登录保护<br>在缓存地址表中查看客户端死否已经登录，如果已经登录，则拒绝重复登录。<br>如果客户有ID，看此客户ID是否登录。<br>以上两个如果有一个验证未通过，返回-1<h2 id="安全设计"><a href="#安全设计" class="headerlink" title="安全设计"></a>安全设计</h2>IP白名单验证<h1 id="实例代码"><a href="#实例代码" class="headerlink" title="实例代码"></a>实例代码</h1>参考 <a href="http://www.cnblogs.com/carl10086/p/6195568.html" target="_blank" rel="external">http://www.cnblogs.com/carl10086/p/6195568.html</a></li>
+</ul>
 
       
     </div>
@@ -377,6 +399,12 @@
 
     <footer class="post-footer">
       
+        <div class="post-tags">
+          
+            <a href="/tags/netty/" rel="tag"># netty</a>
+          
+        </div>
+      
 
       
       
@@ -386,15 +414,15 @@
         <div class="post-nav">
           <div class="post-nav-next post-nav-item">
             
+              <a href="/2017/10/19/netty之WebSocket/" rel="next" title="netty之WebSocket">
+                <i class="fa fa-chevron-left"></i> netty之WebSocket
+              </a>
+            
           </div>
 
           <span class="post-nav-divider"></span>
 
           <div class="post-nav-prev post-nav-item">
-            
-              <a href="/2017/10/09/Spring源码之Autowired/" rel="prev" title="Spring源码之Autowired">
-                Spring源码之Autowired <i class="fa fa-chevron-right"></i>
-              </a>
             
           </div>
         </div>
@@ -528,7 +556,7 @@
             
 
             
-              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#开篇寄语"><span class="nav-number">1.</span> <span class="nav-text">开篇寄语</span></a></li></ol></div>
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#协议栈功能设计"><span class="nav-number">1.</span> <span class="nav-text">协议栈功能设计</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#协议栈功能描述"><span class="nav-number">1.1.</span> <span class="nav-text">协议栈功能描述</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#通信模型"><span class="nav-number">1.2.</span> <span class="nav-text">通信模型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#消息的定义"><span class="nav-number">1.3.</span> <span class="nav-text">消息的定义</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Netty协议支持的字段类型"><span class="nav-number">1.4.</span> <span class="nav-text">Netty协议支持的字段类型</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Netty协议的编解码"><span class="nav-number">1.5.</span> <span class="nav-text">Netty协议的编解码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#链路的建立"><span class="nav-number">1.6.</span> <span class="nav-text">链路的建立</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#链路的关闭"><span class="nav-number">1.7.</span> <span class="nav-text">链路的关闭</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#可靠性设计"><span class="nav-number">1.8.</span> <span class="nav-text">可靠性设计</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#安全设计"><span class="nav-number">1.9.</span> <span class="nav-text">安全设计</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#实例代码"><span class="nav-number">2.</span> <span class="nav-text">实例代码</span></a></li></ol></div>
             
 
           </div>
