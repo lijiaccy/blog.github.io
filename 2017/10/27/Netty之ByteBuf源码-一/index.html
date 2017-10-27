@@ -90,7 +90,7 @@
 <meta property="og:description" content="了解ByteBuf之前应先了解Java NIO的Buffer。而且主要使用的是Buffer的实现类ByteBuffer。这里主要以ByteBuffer。 NIO的ByteBuffer参考 http://www.jianshu.com/p/d67129097a88里面的四个属性  容量（Capacity）：缓冲区能够容纳的数据元素的最大数量。这一容量在缓冲区创建时被设定，并且永远不能被改变。 上界（">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-2fdaac5e69cd8995.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-10-27T08:56:32.219Z">
+<meta property="og:updated_time" content="2017-10-27T09:00:31.591Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="Netty之ByteBuf源码(一)">
 <meta name="twitter:description" content="了解ByteBuf之前应先了解Java NIO的Buffer。而且主要使用的是Buffer的实现类ByteBuffer。这里主要以ByteBuffer。 NIO的ByteBuffer参考 http://www.jianshu.com/p/d67129097a88里面的四个属性  容量（Capacity）：缓冲区能够容纳的数据元素的最大数量。这一容量在缓冲区创建时被设定，并且永远不能被改变。 上界（">
@@ -378,16 +378,16 @@
 <h1 id="ByteBuf的继承关系"><a href="#ByteBuf的继承关系" class="headerlink" title="ByteBuf的继承关系"></a>ByteBuf的继承关系</h1><p><img src="http://upload-images.jianshu.io/upload_images/4714843-2fdaac5e69cd8995.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
 <h2 id="从内存分配角度看："><a href="#从内存分配角度看：" class="headerlink" title="从内存分配角度看："></a>从内存分配角度看：</h2><p>（1）堆内存（HeapByteBuf）字节缓冲区：<br>特点是内存的分配和回收速度快，可以被JVM自动回收；<br>缺点是如果进行Socket的I/O读写，需要额外做一次内存复制，将堆内存对应的缓冲区复制到内核Channel中，性能有一定的下降<br>（2）直接内存（DirectByteBuf）字节缓冲区：<br>非堆内存，它在堆外进行内存分配，相比于堆内存，它的分配和回收会慢一点，但是将它写入和从SocketChannel中读取时，相当于少一次内存复制，速度比对内存快。<br>**经验表明：ByteBuf最佳实践是在I/O通信线程读写缓冲区使用DirectByteBuf，后端业务消息的编解码模块使用HeapByteBuf，这样组合可以达到性能最优。</p>
 <h2 id="从内存回收角度看"><a href="#从内存回收角度看" class="headerlink" title="从内存回收角度看"></a>从内存回收角度看</h2><p>对象池的ByteBuf和普通ByteBuf。<br>两者的主要区别是就是基于对象池的ByteBuf可以重用ByteBuf对象，它自己维护一个内存池，可以循环利用创建的ByteBuf，提升内存使用效率，降低由于高负载导致的频繁GC。测试标明使用内存池后的Netty在高负载，大并发的冲击下内存和GC更加平稳。<br><strong>尽管推荐使用基于内存池的ByteBuf，但是内存池的管理和维护更加复杂，使用起来更加谨慎。</strong></p>
-<h1 id="ByteBuf的动态扩展"><a href="#ByteBuf的动态扩展" class="headerlink" title="ByteBuf的动态扩展"></a>ByteBuf的动态扩展</h1><p>正常情况下，NIO对ByteBuffer进行put操作时，如果缓冲区剩余可写空间不够，会发生BufferOverflowException。为了避免这个问题，通常在put时会对剩余可用空间进行校验，如果剩余空间不足，需要重新创建一个新的ByteBuffer，并将之前的ByteBuffer复制到新创建的ByteBuffer中，最后释放老的ByteBuffer。<br>而由ByteBuf的write操作负责剩余的可用空间检验，如果可用缓冲区不足，ByteBuf会自动扩容。对于使用者而言，不需要关系底层的校验和扩展。代码如下。</p>
-<p>  //三个参数，src写的数据，srcIndex就是writeIndex，长度。<br>  public ByteBuf writeBytes(byte[] src, int srcIndex, int length) {</p>
-<pre><code>this.ensureAccessible();
+<h1 id="ByteBuf的动态扩展"><a href="#ByteBuf的动态扩展" class="headerlink" title="ByteBuf的动态扩展"></a>ByteBuf的动态扩展</h1><p>正常情况下，NIO对ByteBuffer进行put操作时，如果缓冲区剩余可写空间不够，会发生BufferOverflowException。为了避免这个问题，通常在put时会对剩余可用空间进行校验，如果剩余空间不足，需要重新创建一个新的ByteBuffer，并将之前的ByteBuffer复制到新创建的ByteBuffer中，最后释放老的ByteBuffer。<br>而由ByteBuf的write操作负责剩余的可用空间检验，如果可用缓冲区不足，ByteBuf会自动扩容。对于使用者而言，不需要关系底层的校验和扩展。代码如下。<br>三个参数，src写的数据，srcIndex就是writeIndex，长度。</p>
+<pre><code>public ByteBuf writeBytes(byte[] src, int srcIndex, int length) {
+this.ensureAccessible();
 this.ensureWritable(length);
 this.setBytes(this.writerIndex, src, srcIndex, length);
 this.writerIndex += length;
 return this;
-</code></pre><p>  }</p>
-<p>  public ByteBuf ensureWritable(int minWritableBytes) {</p>
-<pre><code>if (minWritableBytes &lt; 0) {
+}
+public ByteBuf ensureWritable(int minWritableBytes) {
+if (minWritableBytes &lt; 0) {
     throw new IllegalArgumentException(String.format(&quot;minWritableBytes: %d (expected: &gt;= 0)&quot;, minWritableBytes));
 } else if (minWritableBytes &lt;= this.writableBytes()) {
     return this;
@@ -398,20 +398,22 @@ return this;
     this.capacity(newCapacity);
     return this;
 }
-</code></pre><p>  }</p>
-<h1 id="ByteBuf的主要API"><a href="#ByteBuf的主要API" class="headerlink" title="ByteBuf的主要API"></a>ByteBuf的主要API</h1><p>以AbstractByteBuf为例来看，除了上面的write方法之外，还有<br><strong>readBytes：缓冲区的内容</strong></p>
-<p>  public ByteBuf readBytes(byte[] dst, int dstIndex, int length) {</p>
-<pre><code>//对缓冲区的可用空间进行校验
+}
+</code></pre><h1 id="ByteBuf的主要API"><a href="#ByteBuf的主要API" class="headerlink" title="ByteBuf的主要API"></a>ByteBuf的主要API</h1><p>以AbstractByteBuf为例来看，除了上面的write方法之外，还有<br><strong>readBytes：缓冲区的内容</strong></p>
+<pre><code>public ByteBuf readBytes(byte[] dst, int dstIndex, int length) {
+//对缓冲区的可用空间进行校验
 this.checkReadableBytes(length);
 this.getBytes(this.readerIndex, dst, dstIndex, length);
 this.readerIndex += length;
 return this;
-</code></pre><p>  }<br><strong>slice：获取调用者的子缓冲区，且与原缓冲区共享缓冲区</strong></p>
-<p>  public ByteBuf slice() {</p>
-<pre><code>return this.slice(this.readerIndex, this.readableBytes());
-</code></pre><p>  }</p>
-<p>  public SlicedByteBuf(ByteBuf buffer, int index, int length) {</p>
-<pre><code>super(length);
+}
+</code></pre><p><strong>slice：获取调用者的子缓冲区，且与原缓冲区共享缓冲区</strong></p>
+<pre><code>public ByteBuf slice() {
+return this.slice(this.readerIndex, this.readableBytes());
+}
+
+public SlicedByteBuf(ByteBuf buffer, int index, int length) {
+super(length);
 if (index &gt;= 0 &amp;&amp; index &lt;= buffer.capacity() - length) {
     if (buffer instanceof SlicedByteBuf) {
         this.buffer = ((SlicedByteBuf)buffer).buffer;
@@ -429,25 +431,29 @@ if (index &gt;= 0 &amp;&amp; index &lt;= buffer.capacity() - length) {
 } else {
     throw new IndexOutOfBoundsException(buffer + &quot;.slice(&quot; + index + &quot;, &quot; + length + &apos;)&apos;);
 }
-</code></pre><p>  }<br><strong>copy：复制一份全新的对象，内容和缓冲区都不是共享的</strong></p>
-<p>  public ByteBuf copy(int index, int length) {</p>
-<pre><code>this.checkIndex(index, length);
+}
+</code></pre><p><strong>copy：复制一份全新的对象，内容和缓冲区都不是共享的</strong></p>
+<pre><code>public ByteBuf copy(int index, int length) {
+this.checkIndex(index, length);
 return this.buffer.copy(index + this.adjustment, length);
-</code></pre><p>  }<br><strong>duplicate：复制当前对象，复制后的对象与前对象共享缓冲区，且维护自己的独立索引</strong></p>
-<p>  public ByteBuf duplicate() {</p>
-<pre><code>return new DuplicatedByteBuf(this);
-</code></pre><p>  }</p>
-<p>  public DuplicatedByteBuf(ByteBuf buffer) {</p>
-<pre><code>super(buffer.maxCapacity());
+}
+</code></pre><p><strong>duplicate：复制当前对象，复制后的对象与前对象共享缓冲区，且维护自己的独立索引</strong></p>
+<pre><code>public ByteBuf duplicate() {
+return new DuplicatedByteBuf(this);
+}
+
+public DuplicatedByteBuf(ByteBuf buffer) {
+super(buffer.maxCapacity());
 if (buffer instanceof DuplicatedByteBuf) {
     this.buffer = ((DuplicatedByteBuf)buffer).buffer;
 } else {
     this.buffer = buffer;
 }
 this.setIndex(buffer.readerIndex(), buffer.writerIndex());
-</code></pre><p>  }<br><strong>discardReadBytes和discardSomeReadBytes：重用缓冲区</strong><br>设置读写索引的同时需要调用adjustMarkers()调整markedReaderIndex和markedWriterIndex</p>
-<p>  public ByteBuf discardReadBytes() {</p>
-<pre><code>this.ensureAccessible();
+}
+</code></pre><p><strong>discardReadBytes和discardSomeReadBytes：重用缓冲区</strong><br>设置读写索引的同时需要调用adjustMarkers()调整markedReaderIndex和markedWriterIndex</p>
+<pre><code>public ByteBuf discardReadBytes() {
+this.ensureAccessible();
 if (this.readerIndex == 0) {
     return this;
 } else {
@@ -462,9 +468,9 @@ if (this.readerIndex == 0) {
     }
     return this;
 }
-</code></pre><p>  }</p>
-<p>  public ByteBuf discardSomeReadBytes() {</p>
-<pre><code>this.ensureAccessible();
+}
+public ByteBuf discardSomeReadBytes() {
+this.ensureAccessible();
 if (this.readerIndex == 0) {
     return this;
 } else if (this.readerIndex == this.writerIndex) {
@@ -481,9 +487,9 @@ if (this.readerIndex == 0) {
 
     return this;
 }
-</code></pre><p>  }</p>
-<p>  protected final void adjustMarkers(int decrement) {</p>
-<pre><code>int markedReaderIndex = this.markedReaderIndex;
+}
+protected final void adjustMarkers(int decrement) {
+int markedReaderIndex = this.markedReaderIndex;
 if (markedReaderIndex &lt;= decrement) {
     this.markedReaderIndex = 0;
     int markedWriterIndex = this.markedWriterIndex;
@@ -496,22 +502,30 @@ if (markedReaderIndex &lt;= decrement) {
     this.markedReaderIndex = markedReaderIndex - decrement;
     this.markedWriterIndex -= decrement;
 }
-</code></pre><p>  }<br><strong>skipBytes：丢弃非法的数据报</strong></p>
-<p>  public ByteBuf skipBytes(int length) {</p>
-<pre><code>this.checkReadableBytes(length);
+}
+</code></pre><p><strong>skipBytes：丢弃非法的数据报</strong></p>
+<pre><code>public ByteBuf skipBytes(int length) {
+this.checkReadableBytes(length);
 this.readerIndex += length;
 return this;
-</code></pre><p>  }</p>
-</li>
+}
+</code></pre></li>
 </ul>
 <h2 id="代码示例"><a href="#代码示例" class="headerlink" title="代码示例"></a>代码示例</h2><pre><code>import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-
 public class Test {
     public static void main(String[] args) {
         ByteBuf byteBuf = Unpooled.buffer(4);
-</code></pre><p>//            ByteBuf byteBuf = Unpooled.directBuffer(4);<br>            byteBuf.writeByte(1);<br>            byteBuf.writeByte(2);<br>            //结果为1<br>            System.out.println(byteBuf.readByte());<br>            //结果为2<br>            System.out.println(byteBuf.readByte());<br>            byteBuf.writeByte(3);</p>
-<pre><code>        //结果为2
+        //ByteBuf byteBuf = Unpooled.directBuffer(4);
+        byteBuf.writeByte(1);
+        byteBuf.writeByte(2);
+        //结果为1
+        System.out.println(byteBuf.readByte());
+        //结果为2
+        System.out.println(byteBuf.readByte());
+        byteBuf.writeByte(3);
+
+        //结果为2
         System.out.println(byteBuf.readerIndex());
         //结果为3
         System.out.println(byteBuf.writerIndex());
@@ -532,7 +546,6 @@ public class Test {
         System.out.println(byteBuf.writerIndex());
         //结果为64
         System.out.println(byteBuf.capacity());
-
         //slice是重新复制了一个对象
         ByteBuf slice = byteBuf.slice();
         //结果为7
@@ -542,7 +555,6 @@ public class Test {
         //SlicedByteBuf(ridx: 0, widx: 7, cap: 7/7, unwrapped: UnpooledHeapByteBuf(ridx: 0, widx: 7, cap: 64))
         System.out.println(slice.markReaderIndex());
         ByteBuf copy = byteBuf.copy();
-
         //copy是复制了byteBuf
         //结果是UnpooledHeapByteBuf(ridx: 0, widx: 7, cap: 7)
         System.out.println(copy.markReaderIndex());
