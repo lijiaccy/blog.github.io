@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.3" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.3">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.3">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.3" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="netty," />
+
+
+
+
+
+  <link rel="alternate" href="/atom.xml" title="LiJia's Dream" type="application/atom+xml" />
+
+
+
+
+
+
+<meta name="description" content="Netty的ChannelPipeline和ChannelHandler机制类似于Servlet和Filter过滤器，这类拦截器实际上是职责链模式的一种变形。 ChannelPipeline的事件处理功能说明ChannelPipeline是ChannelHandler的容器，负责ChannelHandler的管理和事件拦截与调度。一个消息被ChannelPipeline的ChannelHandle">
+<meta name="keywords" content="netty">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Netty之ChannelPipeline">
+<meta property="og:url" content="http://yoursite.com/2017/11/01/Netty之ChannelPipeline/index.html">
+<meta property="og:site_name" content="LiJia&#39;s Dream">
+<meta property="og:description" content="Netty的ChannelPipeline和ChannelHandler机制类似于Servlet和Filter过滤器，这类拦截器实际上是职责链模式的一种变形。 ChannelPipeline的事件处理功能说明ChannelPipeline是ChannelHandler的容器，负责ChannelHandler的管理和事件拦截与调度。一个消息被ChannelPipeline的ChannelHandle">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-c07378efb2ac1bb9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+<meta property="og:updated_time" content="2017-11-01T07:09:10.795Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Netty之ChannelPipeline">
+<meta name="twitter:description" content="Netty的ChannelPipeline和ChannelHandler机制类似于Servlet和Filter过滤器，这类拦截器实际上是职责链模式的一种变形。 ChannelPipeline的事件处理功能说明ChannelPipeline是ChannelHandler的容器，负责ChannelHandler的管理和事件拦截与调度。一个消息被ChannelPipeline的ChannelHandle">
+<meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4714843-c07378efb2ac1bb9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    version: '5.1.3',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/11/01/Netty之ChannelPipeline/"/>
+
+
+
+
+
+  <title>Netty之ChannelPipeline | LiJia's Dream</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">LiJia's Dream</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">努力改掉懒惰的习惯！</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-question-circle"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/11/01/Netty之ChannelPipeline/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="lijia">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="LiJia's Dream">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Netty之ChannelPipeline</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-11-01T15:08:27+08:00">
+                2017-11-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/netty/" itemprop="url" rel="index">
+                    <span itemprop="name">netty</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a href="/2017/11/01/Netty之ChannelPipeline/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count disqus-comment-count"
+                        data-disqus-identifier="2017/11/01/Netty之ChannelPipeline/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>Netty的ChannelPipeline和ChannelHandler机制类似于Servlet和Filter过滤器，这类拦截器实际上是职责链模式的一种变形。</p>
+<h1 id="ChannelPipeline的事件处理"><a href="#ChannelPipeline的事件处理" class="headerlink" title="ChannelPipeline的事件处理"></a>ChannelPipeline的事件处理</h1><h2 id="功能说明"><a href="#功能说明" class="headerlink" title="功能说明"></a>功能说明</h2><p>ChannelPipeline是ChannelHandler的容器，负责ChannelHandler的管理和事件拦截与调度。<br>一个消息被ChannelPipeline的ChannelHandler拦截的处理流程如下：</p>
+<p> 1、底层的SocketChannel.read()方法读取ByteBuf，触发ChannelRead事件，由I/O线程NioEventLoop调用ChannelPipeline的fireChannelRead(Object msg),将消息（ByteBuf）传输到ChannelPipeline中。<br>2、消息依次被HeadHandler，ChannelHandler1，ChannelHandler2。。。TailHandler拦截和处理，这个过程中，热河ChannelHandler都可以中断当前流程，结束消息传递。<br>3、调用ChannelHandlerContext.write()发送消息，消息从TailHandler开始，然后进过ChannelHandlerN。。。ChannelHandler2，ChannelHandler1，HeadHandler最终被添加到消息发送缓冲区中等待刷新和发送，在此过程中也可以中断消息的传递，例如当编码失败时，就需要中断流程，构造异常的Future返回。</p>
+<p>Netty中的事件分为inbound事件和outbound事件。inbound事件通常由I/O线程触发，例如TCP链路建立事件、链路关闭事件、读事件、异常通知事件等。</p>
+<p><strong>触发inbound事件的方法如下。</strong></p>
+<p>（1）ChannelHandlerContext.fireChannelRegistered()：Channel注册事件；</p>
+<p>（2）ChannelHandlerContext.fireChannelActive()：TCP链路建立成功，Channel激活事件；</p>
+<p>（3）ChannelHandlerContext.fireChannelRead(Object)：读事件；</p>
+<p>（4）ChannelHandlerContext.fireChannelReadComplete()：读操作完成通知事件；</p>
+<p>（5）ChannelHandlerContext.fireExceptionCaught(Throwable)：异常通知事件；</p>
+<p>（6）ChannelHandlerContext.fireUserEventTriggered(Object)：用户自定义事件；</p>
+<p>（7）ChannelHandlerContext.fireChannelWritabilityChanged()：Channel的可写状态变化通知事件；</p>
+<p>（8）ChannelHandlerContext.fireChannelInactive()：TCP连接关闭，链路不可用通知事件。</p>
+<p>Outbound事件通常是由用户主动发起的网络I/O操作，例如用户发起的连接操作、绑定操作、消息发送等操作，它对应图17-1的右半部分。</p>
+<p><strong>触发outbound事件的方法如下：</strong></p>
+<p>（1）ChannelHandlerContext.bind(SocketAddress, ChannelPromise)：绑定本地地址事件；</p>
+<p>（2）ChannelHandlerContext.connect(SocketAddress, SocketAddress, ChannelPromise)：连接服务端事件；</p>
+<p>（3）ChannelHandlerContext.write(Object, ChannelPromise)：发送事件；</p>
+<p>（4）ChannelHandlerContext.flush()：刷新事件；</p>
+<p>（5）ChannelHandlerContext.read()：读事件；</p>
+<p>（6）ChannelHandlerContext.disconnect(ChannelPromise)：断开连接事件；</p>
+<p>（7）ChannelHandlerContext.close(ChannelPromise)：关闭当前Channel事件。</p>
+<h2 id="自定义拦截器"><a href="#自定义拦截器" class="headerlink" title="自定义拦截器"></a>自定义拦截器</h2><p>ChannelPipeline通过ChannelHandler接口来实现事件的拦截和处理，由于ChannelHandler中的事件种类繁多，不同的ChannelHandler可能只需要关心其中的某一个或者几个事件，所以，通常ChannelHandler只需要继承ChannelHandlerAdapter类覆盖自己关心的方法即可。</p>
+<pre><code>public class MyInboundHandler extends ChannelHandlerAdapter {
+    @Override
+    //拦截channelActive方法
+    public void channelActive(ChannelHandlerContext ctx) {
+        System.out.println(&quot;TCP connected!&quot;);
+        ctx.fireChannelActive();
+    }
+}
+</code></pre><h2 id="构建pipeline"><a href="#构建pipeline" class="headerlink" title="构建pipeline"></a>构建pipeline</h2><p>事实上，用户不需要自己创建pipeline，因为使用ServerBootstrap或者Bootstrap启动服务端或者客户端时，Netty会为每个Channel连接创建一个独立的pipeline。对于使用者而言，只需要将自定义的拦截器加入到pipeline中即可。</p>
+<pre><code>pipeline = ch.pipeline();
+pipeline.addLast(&quot;decoder&quot;, new MyProtocolDecoder());
+pipeline.addLast(&quot;encoder&quot;, new MyProtocolEncoder());
+</code></pre><p>对于类似编解码这样的ChannelHandler，它存在先后顺序，例如MessageToMessageEncoder，在它之前往往需要有ByteToMessageDecoder将ByteBuf解码为对象，然后对对象做二次解码得到最终的POJO对象。</p>
+<h2 id="ChannelPipeline的主要特性"><a href="#ChannelPipeline的主要特性" class="headerlink" title="ChannelPipeline的主要特性"></a>ChannelPipeline的主要特性</h2><p><strong>ChannelPipeline支持运行态动态的添加或者删除ChannelHandler</strong>，在某些场景下这个特性非常实用。例如当业务高峰期需要对系统做拥塞保护时，就可以根据当前的系统时间进行判断，如果处于业务高峰期，则动态地将系统拥塞保护ChannelHandler添加到当前的ChannelPipeline中，当高峰期过去之后，就可以动态删除拥塞保护ChannelHandler了。</p>
+<p>ChannelPipeline是线程安全的，这意味着N个业务线程可以并发地操作ChannelPipeline而不存在多线程并发问题。但是，ChannelHandler却不是线程安全的，这意味着尽管ChannelPipeline是线程安全的，但是用户仍然需要自己保证ChannelHandler的线程安全。</p>
+<h1 id="ChannelPipeline源码分析"><a href="#ChannelPipeline源码分析" class="headerlink" title="ChannelPipeline源码分析"></a>ChannelPipeline源码分析</h1><p>ChannelPipeline的代码相对比较简单，它实际上是一个ChannelHandler的容器，内部维护了一个ChannelHandler的链表和迭代器，可以方便地实现ChannelHandler查找、添加、替换和删除。<br><strong>ChannelPipeline对ChannelHandler的管理</strong></p>
+<p>ChannelPipeline是ChannelHandler的管理容器，负责ChannelHandler的查询、添加、替换和删除，它与Map等容器的实现非常类似。</p>
+<p>由于ChannelPipeline支持运行期动态修改，在调用类似addBefore（ChannelHandlerInvoker invoker, String baseName, final String name, ChannelHandler handler）方法时，存在两种潜在的多线程并发访问场景。</p>
+<ul>
+<li>I/O线程和用户业务线程的并发访问；</li>
+<li>用户多个线程之间的并发访问。</li>
+</ul>
+<p>为了保证ChannelPipeline的线程安全性，需要通过线程安全容器或者锁来保证并发访问的安全，此处Netty直接使用了synchronized关键字，保证同步块内的所有操作的原子性。</p>
+<pre><code>public ChannelPipeline addLast(ChannelHandlerInvoker invoker, String name, ChannelHandler handler) {
+    synchronized(this) {
+        name = this.filterName(name, handler);
+        this.addLast0(name, new DefaultChannelHandlerContext(this, invoker, name, handler));
+        return this;
+    }
+}
+</code></pre><p>首先根据baseName获取它对应的DefaultChannelHandlerContext，ChannelPipeline维护了ChannelHandler名和ChannelHandlerContext实例的映射关系。  新增的ChannelHandler名进行重复性校验，如果已经有同名的ChanneHandler存在，则不允许覆盖，抛出IllegalArgumentException(“Duplicate handler name: “ + name)异常。<br>校验通过之后，使用新增的ChannelHandler等参数构造一个新的DefaultChannelHandlerContext实例。<br>将新创建的DefaultChannelHandlerContext添加到当前的pipeline中(首先需要对添加的ChannelHandlerContext做重复性校验,如果ChannelHandler不是可以在多个ChannelPipeline中共享的，且已经被添加到ChannelPipeline中，则抛出ChannelPipelineException异常。)。<br>加入成功之后，缓存ChannelHandlerContext，发送新增ChannelHandlerContext通知消息。<br><img src="http://upload-images.jianshu.io/upload_images/4714843-c07378efb2ac1bb9.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""></p>
+<h2 id="ChannelPipeline的inbound事件"><a href="#ChannelPipeline的inbound事件" class="headerlink" title="ChannelPipeline的inbound事件"></a>ChannelPipeline的inbound事件</h2><p>当发生某个I/O事件的时候，例如链路建立、链路关闭、读取操作完成等，都会产生一个事件，事件在pipeline中得到传播和处理，它是事件处理的总入口。由于网络I/O相关的事件有限，因此Netty对这些事件进行了统一抽象，Netty自身和用户的ChannelHandler会对感兴趣的事件进行拦截和处理。</p>
+<p>pipeline中以fireXXX命名的方法都是从IO线程流向用户业务Handler的inbound事件，它们的实现因功能而异，但是处理步骤类似，总结如下。</p>
+<p>（1）调用HeadHandler对应的fireXXX方法；<br>（2）执行事件相关的逻辑操作。</p>
+<p>以fireChannelActive方法为例，调用head.fireChannelActive()之后，判断当前的Channel配置是否自动读取，如果为真则调用Channel的read方法</p>
+<p><strong>DefaultChannelPipeline</strong></p>
+<pre><code>@Override
+public ChannelPipeline fireChannelActive() {
+    head.fireChannelActive();
+    if (channel.config().isAutoRead()) {
+        channel.read();
+    }
+    return this;
+}
+</code></pre><p><strong>ChannelPipeline的outbound事件</strong></p>
+<p>由用户线程或者代码发起的I/O操作被称为outbound事件，事实上inbound和outbound是Netty自身根据事件在pipeline中的流向抽象出来的术语，在其他NIO框架中并没有这个概念。</p>
+<p>Pipeline本身并不直接进行I/O操作，最终都是由Unsafe和Channel来实现真正的I/O操作的。Pipeline负责将I/O事件通过HeadHandler进行调度和传播，最终调用Unsafe的I/O方法进行I/O操作。最终由TailHandler调用Unsafe的connect方法发起真正的连接，pipeline仅仅负责事件的调度。</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>ChannelPipeline是ChannelHandler的容器，负责ChannelHandler的管理和事件拦截与调度。并且支持运行态动态的添加或者删除ChannelHandler。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/netty/" rel="tag"># netty</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/10/31/Netty之Channel源码/" rel="next" title="Netty之Channel源码">
+                <i class="fa fa-chevron-left"></i> Netty之Channel源码
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">lijia</p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives">
+              
+                  <span class="site-state-item-count">20</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">5</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">6</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+            <div class="feed-link motion-element">
+              <a href="/atom.xml" rel="alternate">
+                <i class="fa fa-rss"></i>
+                RSS
+              </a>
+            </div>
+          
+
+          <div class="links-of-author motion-element">
+            
+          </div>
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#ChannelPipeline的事件处理"><span class="nav-number">1.</span> <span class="nav-text">ChannelPipeline的事件处理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#功能说明"><span class="nav-number">1.1.</span> <span class="nav-text">功能说明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#自定义拦截器"><span class="nav-number">1.2.</span> <span class="nav-text">自定义拦截器</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#构建pipeline"><span class="nav-number">1.3.</span> <span class="nav-text">构建pipeline</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#ChannelPipeline的主要特性"><span class="nav-number">1.4.</span> <span class="nav-text">ChannelPipeline的主要特性</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#ChannelPipeline源码分析"><span class="nav-number">2.</span> <span class="nav-text">ChannelPipeline源码分析</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#ChannelPipeline的inbound事件"><span class="nav-number">2.1.</span> <span class="nav-text">ChannelPipeline的inbound事件</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#总结"><span class="nav-number">3.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">lijia</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Mist</a> v5.1.3</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.3"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.3"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.3"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.3"></script>
+
+
+
+  
+
+
+  
+
+    
+      <script id="dsq-count-scr" src="https://lijiaccy.disqus.com/count.js" async></script>
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'http://yoursite.com/2017/11/01/Netty之ChannelPipeline/';
+          this.page.identifier = '2017/11/01/Netty之ChannelPipeline/';
+          this.page.title = 'Netty之ChannelPipeline';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://lijiaccy.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
