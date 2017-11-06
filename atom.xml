@@ -6,7 +6,7 @@
   <link href="/atom.xml" rel="self"/>
   
   <link href="http://yoursite.com/"/>
-  <updated>2017-11-02T06:45:08.293Z</updated>
+  <updated>2017-11-06T07:47:00.699Z</updated>
   <id>http://yoursite.com/</id>
   
   <author>
@@ -15,6 +15,31 @@
   </author>
   
   <generator uri="http://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>spring源码分析之AOP</title>
+    <link href="http://yoursite.com/2017/11/06/spring%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BAOP/"/>
+    <id>http://yoursite.com/2017/11/06/spring源码分析之AOP/</id>
+    <published>2017-11-06T07:46:21.000Z</published>
+    <updated>2017-11-06T07:47:00.699Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="AOP核心概念"><a href="#AOP核心概念" class="headerlink" title="AOP核心概念"></a>AOP核心概念</h1><p><strong>横切关注点：</strong>对哪些方法进行拦截，拦截后怎么处理，这些关注点称之为横切关注点<br><strong>切面（<code>aspect</code>）：</strong>类是对物体特征的抽象，切面就是对横切关注点的抽象<br><strong>连接点（<code>joinpoint</code>）：</strong>被拦截到的点，因为Spring只支持方法类型的连接点，所以在Spring中连接点指的就是被拦截到的方法，实际上连接点还可以是字段或者构造器<br><strong>切入点（<code>pointcut</code>）：</strong>对连接点进行拦截的定义<br><strong>通知（<code>advice</code>）：</strong>所谓通知指的就是指拦截到连接点之后要执行的代码，通知分为前置、后置、异常、最终、环绕通知五类<br><strong>目标对象：</strong>代理的目标对象<br><strong>织入（<code>weave</code>）：</strong>将切面应用到目标对象并导致代理对象创建的过程<br><strong>引入（<code>introduction</code>）：</strong>在不修改代码的前提下，引入可以在运行期为类动态地添加一些方法或字段</p><h1 id="Spring对AOP的支持"><a href="#Spring对AOP的支持" class="headerlink" title="Spring对AOP的支持"></a>Spring对AOP的支持</h1><p><strong>Spring中AOP代理由Spring的IOC容器负责生成、管理，其依赖关系也由IOC容器负责管理。</strong>因此，AOP代理可以直接使用容器中的其它bean实例作为目标，这种关系可由IOC容器的依赖注入提供。Spring创建代理的规则为：</p><p>1、默认使用Java动态代理来创建AOP代理，这样就可以为任何接口实例创建代理了<br>2、当需要代理的类不是代理接口的时候，Spring会切换为使用CGLIB代理，也可强制使用CGLIB</p><h1 id="JDK动态代理"><a href="#JDK动态代理" class="headerlink" title="JDK动态代理"></a>JDK动态代理</h1><p>首先直接调用就可以了，为什么还需要代理。<strong>采用代理模式可以有效的将具体的实现与调用方进行解耦，通过面向接口进行编码完全将具体的实现隐藏在内部。</strong></p><h2 id="静态代理"><a href="#静态代理" class="headerlink" title="静态代理"></a>静态代理</h2><p>先看看什么是静态代理。由程序员创建或工具生成代理类的源码，再编译代理类。所谓静态也就是在程序运行前就已经存在代理类的字节码文件，代理类和委托类的关系在运行前就确定了。<br>首先创建一个接口和一个实现类。JDK代理都是基于接口的</p><pre><code>public interface ISub {    public void hello(String name);}public class SubImpl implements ISub {    @Override    public void hello(String name) {        System.out.println(&quot;My name is &quot;+name);    }}</code></pre><p>然后写个代理类，也是实现了ISub</p><pre><code>public class SubProxy implements ISub{    ISub sub = new SubImpl();    @Override    public void hello(String name) {        System.out.println(&quot;====之前====&quot;);        sub.hello(name);        System.out.println(&quot;====之后====&quot;);    }}</code></pre><p>最后写客户端。这个Client只于Proxy交互，不需要去了解ISub和SubImpl里面的东西了。实现了解耦。</p><pre><code>public class Client{    public static void main(String[] args) {        SubProxy subProxy = new SubProxy();        subProxy.hello(&quot;lijia&quot;);    }}</code></pre><p>那么静态代理有什么缺点呢。</p><ul><li>代理对象的一个接口只服务一种类型的对象，如果要代理的方法很多，那么必须要为每一种方法都进行代理，静态代理在程序规模稍大就无法胜任了。</li><li><p>如果接口增加一个方法，那么所有实现类和代理类都要增加这个方法。增加系统维护复杂度。</p><h2 id="动态代理"><a href="#动态代理" class="headerlink" title="动态代理"></a>动态代理</h2><p>动态代理的思维模式与之前的一般模式是一样的，也是面向接口进行编码，创建代理类将具体类隐藏解耦，不同之处在于代理类的创建时机不同，动态代理需要在运行时因需实时创建。<br>接口和实现类还是上面的。<br>主要是代理类。代理类实现了InvocationHandler。</p><p>  import java.lang.reflect.InvocationHandler;<br>  import java.lang.reflect.Method;</p><p>  public class DynamicSubProxy implements InvocationHandler {</p><pre><code>private Object object;public DynamicSubProxy(Object o){    this.object = o;}@Overridepublic Object invoke(Object proxy, Method method, Object[] args) throws Throwable {    System.out.println(&quot;====之前====&quot;);    method.invoke(object,args);    System.out.println(&quot;====之后====&quot;);    return null;}</code></pre><p>  }<br>测试类</p><p>  import java.lang.reflect.InvocationHandler;<br>  import java.lang.reflect.Proxy;</p><p>  public class DynamicTest {</p><pre><code>public static void main(String[] args) {    ISub sub = new SubImpl();    InvocationHandler ih = new DynamicSubProxy(sub);    ISub o = (ISub) Proxy.newProxyInstance(ISub.class.getClassLoader(),new Class[]{ISub.class},ih);    o.hello(&quot;lijia&quot;);}</code></pre><p>  }</p></li></ul><p><strong>总结：</strong></p><ol><li>首先JDK的动态代理是基本接口实现的。<br>因为通过使用接口指向实现类的实例的多态实现方式，可以有效的将具体实现类的细节向调用方完全隐藏（调用方调用的是代理类中的方法，而不是实现类中的方法）。面向接口编程，利用java的多态特性，实现程序代码的解耦</li><li>创建代理类的过程。<br>静态代理和动态代理都需要创建代理类。但是创建的方式不一样。<br>静态代理创建的代理类需要知道对哪个接口，哪个实现类来创建代理。而动态代理只需要实现一个固定的接口InvocationHandler 。</li><li>主要通过反射在运行期间创建。而静态代理之前就需要创建好。<h1 id="CGLIB代理"><a href="#CGLIB代理" class="headerlink" title="CGLIB代理"></a>CGLIB代理</h1>JDK实现动态代理需要实现类通过接口定义业务方法，对于没有接口的类，如何实现动态代理呢，这就需要CGLIB代理</li></ol><p>还是用上面的实现类，没有接口了</p><pre><code>public class SubImpl1{    public void hello(String name) {        System.out.println(&quot;My name is &quot;+name);    }}</code></pre><p>cglib代理类</p><pre><code>import org.springframework.cglib.proxy.Enhancer;import org.springframework.cglib.proxy.MethodInterceptor;import org.springframework.cglib.proxy.MethodProxy;import java.lang.reflect.Method;public class CglibProxy implements MethodInterceptor {    private Enhancer enhancer = new Enhancer();    public Object getProxy(Class clazz){        //设置需要创建子类的类        enhancer.setSuperclass(clazz);        enhancer.setCallback(this);        //通过字节码技术动态创建子类实例        return enhancer.create();    }    //实现MethodInterceptor接口方法    @Override    public Object intercept(Object obj, Method method, Object[] args,                            MethodProxy proxy) throws Throwable {        System.out.println(&quot;====之前====&quot;);        //通过代理类调用父类中的方法        Object result = proxy.invokeSuper(obj, args);        System.out.println(&quot;====之后====&quot;);        return result;    }}</code></pre><p>客户端</p><pre><code>public class CglibTest {    public static void main(String[] args) {        CglibProxy proxy = new CglibProxy();        SubImpl1 sub = (SubImpl1) proxy.getProxy(SubImpl1.class);        sub.hello(&quot;lijia&quot;);    }}</code></pre><p><strong>总结：</strong><br>CGLib创建的动态代理对象性能比JDK创建的动态代理对象的性能高不少，但是CGLib在创建代理对象时所花费的时间却比JDK多得多，所以对于单例的对象，因为无需频繁创建对象，用CGLib合适，反之，使用JDK方式要更为合适一些。同时，由于CGLib由于是采用动态创建子类的方法，对于final方法，无法进行代理。</p><h1 id="AOP代码分析"><a href="#AOP代码分析" class="headerlink" title="AOP代码分析"></a>AOP代码分析</h1><p>首先还是通过一个例子来看看。<br>创建一个切面类</p><pre><code>package aop.aspects;import java.util.Arrays;import org.aspectj.lang.JoinPoint;import org.aspectj.lang.ProceedingJoinPoint;import org.aspectj.lang.annotation.After;import org.aspectj.lang.annotation.Around;import org.aspectj.lang.annotation.Aspect;import org.aspectj.lang.annotation.Before;import org.springframework.stereotype.Component;@Component@Aspectpublic class MyAspect1 {    public MyAspect1()    {        System.out.println(&quot;MyAspect1 created &quot;);    }    @Before(&quot;execution(* spring.services.*.*(..))&quot;)    public void traceBusiness() {        System.out.println( &quot;in spring advice &quot;);    }    @Before(&quot;execution(* spring.services.*.*(..))&quot;)    public void traceBusiness(JoinPoint jp) {        System.out.println(&quot;joinpoint [  &quot;+jp.getKind() + &quot; ,declaringTypeName &quot;                + jp.getSignature().getDeclaringTypeName()+&quot;\r\n this &quot;+jp.getThis().getClass().getName() + &quot;\r\n,target:&quot; + jp.getTarget() + &quot; , method &quot;                + jp.getSignature().getName() + &quot;,args:&quot; + Arrays.toString(jp.getArgs()));    }    @After(&quot;execution(* spring.services.*.*(..))&quot;)    public void afterBusiness() {        System.out.println( &quot;after aop&quot;);    }    @Around(&quot;execution(* spring.services.*.*(..))&quot;)    public void traceBusiness(ProceedingJoinPoint jp) throws Throwable {        System.out.println(&quot;before enter method &quot;+jp.getSignature().getName());        jp.proceed(jp.getArgs());        System.out.println(&quot;after enter method &quot;+jp.getSignature().getName());    }}</code></pre><p>创建接口：</p><pre><code>package spring.services;public interface MyDemoServiceIntf {    public void doBusinessBBB(boolean suc);}</code></pre><p>创建MyDemoServiceIntf 实现类</p><pre><code>package spring.services;import org.springframework.stereotype.Component;@Component(&quot;myTestService2&quot;)public class MyTestService2 {    public MyTestService2()    {    System.out.println(&quot;MyTestService2 craeated &quot;+this);    }    public void doBusinessAAA(String[] args,boolean suc)    {    }    public void doBusinessBBB(boolean suc)    {        System.out.println(&quot;=====进入了BBBBB&quot;);        doBusinessCCC();    }    public void doBusinessCCC()    {        System.out.println(&quot;=====CCCCCC&quot;);    }}</code></pre><p>配置类</p><pre><code>import org.springframework.beans.factory.annotation.Configurable;import org.springframework.context.annotation.ComponentScan;import org.springframework.context.annotation.Configuration;import org.springframework.context.annotation.EnableAspectJAutoProxy;@Configuration@ComponentScan(&quot;spring.services,aop.aspects&quot;)@EnableAspectJAutoProxy(proxyTargetClass=true,exposeProxy=true)//@EnableAspectJAutoProxy(proxyTargetClass=true)@Configurablepublic class MySpringConfig {public MySpringConfig(){    System.out.println(&quot;MySpringConfig create d &quot;);}}</code></pre><p>测试类</p><pre><code>import org.springframework.context.annotation.AnnotationConfigApplicationContext;import spring.services.MyTestService2;public class Test4 {    public static void main(String[] args) {        AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(MySpringConfig.class);        MyTestService2 mybean = (MyTestService2) ctx.getBean(&quot;myTestService2&quot;);        mybean.doBusinessBBB(true);        ctx.close();    }}</code></pre><p>运行结果：</p><p><img src="http://upload-images.jianshu.io/upload_images/4714843-27147f88f0f063e2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt=""><br>看结果顺序，<br>首先是几个构造函数初始化。<br>然后是进入<code>@Around</code>的System.out.println(“before enter method “+jp.getSignature().getName());<br>再走了<code>@Before</code>，<br>走完了之后执行业务代码，<br>最后<code>@After</code>，<br>然后走<code>@Around</code>的System.out.println(“after enter method “+jp.getSignature().getName());</p><h2 id="注解"><a href="#注解" class="headerlink" title="注解"></a>注解</h2><ol><li><code>arg()</code> 限制连接点匹配参数为指定类型的执行方法；</li><li><code>@args()</code> 限制连接点匹配参数由指定注解标注的执行方法；</li><li><code>execution()</code> 用于匹配是连接点的执行方法；</li><li><code>this()</code> 限制连接点匹配AOP代理的bean引用为指定类型的类</li><li><code>target</code> 限制连接点匹配目标对象为指定类型的类</li><li><code>@target()</code> 限制连接点匹配特定的执行对象，这些对象对应的类要具有指定类型的注解</li><li><code>within()</code> 限制连接点匹配指定的类型</li><li><code>@within()</code>  限制连接点匹配特定注解所标注的类型</li><li><code>@annotation</code> 限定匹配带有指定注解的连接点</li></ol><h1 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h1><p>Spring AOP使用的动态代理，所谓的动态代理就是说AOP框架不会去修改字节码，而是在内存中临时为方法生成一个AOP对象，这个AOP对象包含了目标对象的全部方法，并且在特定的切点做了增强处理，并回调原对象的方法。</p><p>Spring AOP中的动态代理主要有两种方式，<strong>JDK动态代理和CGLIB动态代理</strong>。JDK动态代理通过反射来接收被代理的类，并且要求被代理的类必须实现一个接口。JDK动态代理的核心是InvocationHandler接口和Proxy类。</p><p><strong>如果目标类没有实现接口，那么Spring AOP会选择使用CGLIB来动态代理目标类</strong>。CGLIB（Code Generation Library），是一个代码生成的类库，可以在运行时动态的生成某个类的子类，注意，CGLIB是通过继承的方式做的动态代理，因此如果某个类被标记为final，那么它是无法使用CGLIB做动态代理的。</p>]]></content>
+    
+    <summary type="html">
+    
+      
+      
+        &lt;h1 id=&quot;AOP核心概念&quot;&gt;&lt;a href=&quot;#AOP核心概念&quot; class=&quot;headerlink&quot; title=&quot;AOP核心概念&quot;&gt;&lt;/a&gt;AOP核心概念&lt;/h1&gt;&lt;p&gt;&lt;strong&gt;横切关注点：&lt;/strong&gt;对哪些方法进行拦截，拦截后怎么处理，这些关注点称之为横
+      
+    
+    </summary>
+    
+      <category term="spring" scheme="http://yoursite.com/categories/spring/"/>
+    
+    
+      <category term="spring" scheme="http://yoursite.com/tags/spring/"/>
+    
+  </entry>
   
   <entry>
     <title>spring源码分析IOC和DI</title>
@@ -493,32 +518,6 @@
     
     
       <category term="NIO" scheme="http://yoursite.com/tags/NIO/"/>
-    
-  </entry>
-  
-  <entry>
-    <title>Spring源码之Autowired</title>
-    <link href="http://yoursite.com/2017/10/09/Spring%E6%BA%90%E7%A0%81%E4%B9%8BAutowired/"/>
-    <id>http://yoursite.com/2017/10/09/Spring源码之Autowired/</id>
-    <published>2017-10-09T06:57:55.000Z</published>
-    <updated>2017-10-09T07:59:02.519Z</updated>
-    
-    <content type="html"><![CDATA[<p>#测试</p>]]></content>
-    
-    <summary type="html">
-    
-      
-      
-        &lt;p&gt;#测试&lt;/p&gt;
-
-      
-    
-    </summary>
-    
-      <category term="spring" scheme="http://yoursite.com/categories/spring/"/>
-    
-    
-      <category term="spring Autowired" scheme="http://yoursite.com/tags/spring-Autowired/"/>
     
   </entry>
   
