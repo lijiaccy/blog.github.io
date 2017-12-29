@@ -81,19 +81,19 @@
 
 
 
-<meta name="description" content="看了群主的java体系结构 http://cmsblogs.com/wp-content/images/share/chenssy_juc_201712.png，但是图看着太不方便了。就把这个弄成了一篇文章。 JMM线程通信机制java中采用的是共享内存的方式（wait和notify都要获得锁） 内存模型重排序定义：为了程序的性能，处理器、编译器都会对程序进行重排序处理。条件：  在单线程环境下不">
+<meta name="description" content="看了群主的java体系结构 http://cmsblogs.com/wp-content/images/share/chenssy_juc_201712.png  但是图看着太不方便了。就把这个弄成了一篇文章。 JMM线程通信机制java中采用的是共享内存的方式（wait和notify都要获得锁） 内存模型重排序定义：为了程序的性能，处理器、编译器都会对程序进行重排序处理。条件：  在单线程环境下">
 <meta property="og:type" content="article">
 <meta property="og:title" content="LiJia&#39;s Dream">
 <meta property="og:url" content="http://yoursite.com/2017/12/29/java体系结构（转）/index.html">
 <meta property="og:site_name" content="LiJia&#39;s Dream">
-<meta property="og:description" content="看了群主的java体系结构 http://cmsblogs.com/wp-content/images/share/chenssy_juc_201712.png，但是图看着太不方便了。就把这个弄成了一篇文章。 JMM线程通信机制java中采用的是共享内存的方式（wait和notify都要获得锁） 内存模型重排序定义：为了程序的性能，处理器、编译器都会对程序进行重排序处理。条件：  在单线程环境下不">
+<meta property="og:description" content="看了群主的java体系结构 http://cmsblogs.com/wp-content/images/share/chenssy_juc_201712.png  但是图看着太不方便了。就把这个弄成了一篇文章。 JMM线程通信机制java中采用的是共享内存的方式（wait和notify都要获得锁） 内存模型重排序定义：为了程序的性能，处理器、编译器都会对程序进行重排序处理。条件：  在单线程环境下">
 <meta property="og:locale" content="zh-Hans">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-7ff634064c2bb355.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 <meta property="og:image" content="http://upload-images.jianshu.io/upload_images/4714843-81bffca66d68a4a2.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
-<meta property="og:updated_time" content="2017-12-29T08:29:20.983Z">
+<meta property="og:updated_time" content="2017-12-29T08:31:51.612Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="LiJia&#39;s Dream">
-<meta name="twitter:description" content="看了群主的java体系结构 http://cmsblogs.com/wp-content/images/share/chenssy_juc_201712.png，但是图看着太不方便了。就把这个弄成了一篇文章。 JMM线程通信机制java中采用的是共享内存的方式（wait和notify都要获得锁） 内存模型重排序定义：为了程序的性能，处理器、编译器都会对程序进行重排序处理。条件：  在单线程环境下不">
+<meta name="twitter:description" content="看了群主的java体系结构 http://cmsblogs.com/wp-content/images/share/chenssy_juc_201712.png  但是图看着太不方便了。就把这个弄成了一篇文章。 JMM线程通信机制java中采用的是共享内存的方式（wait和notify都要获得锁） 内存模型重排序定义：为了程序的性能，处理器、编译器都会对程序进行重排序处理。条件：  在单线程环境下">
 <meta name="twitter:image" content="http://upload-images.jianshu.io/upload_images/4714843-7ff634064c2bb355.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240">
 
 
@@ -345,7 +345,7 @@
       
 
       
-        <p>看了群主的java体系结构 <a href="http://cmsblogs.com/wp-content/images/share/chenssy_juc_201712.png，但是图看着太不方便了。就把这个弄成了一篇文章。" target="_blank" rel="external">http://cmsblogs.com/wp-content/images/share/chenssy_juc_201712.png，但是图看着太不方便了。就把这个弄成了一篇文章。</a></p>
+        <p>看了群主的java体系结构 <a href="http://cmsblogs.com/wp-content/images/share/chenssy_juc_201712.png" target="_blank" rel="external">http://cmsblogs.com/wp-content/images/share/chenssy_juc_201712.png</a>  但是图看着太不方便了。就把这个弄成了一篇文章。</p>
 <h1 id="JMM"><a href="#JMM" class="headerlink" title="JMM"></a>JMM</h1><h2 id="线程通信机制"><a href="#线程通信机制" class="headerlink" title="线程通信机制"></a>线程通信机制</h2><p>java中采用的是共享内存的方式（<strong>wait和notify都要获得锁</strong>）</p>
 <h2 id="内存模型"><a href="#内存模型" class="headerlink" title="内存模型"></a>内存模型</h2><h3 id="重排序"><a href="#重排序" class="headerlink" title="重排序"></a>重排序</h3><p><strong>定义：</strong>为了程序的性能，处理器、编译器都会对程序进行重排序处理。<br><strong>条件：</strong></p>
 <ol>
